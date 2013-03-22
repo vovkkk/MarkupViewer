@@ -45,6 +45,9 @@ class App(QtGui.QMainWindow):
         # Add the WebView control
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
+        
+        # Enable plugins (Flash, QiuckTime etc.)
+        QtWebKit.QWebSettings.globalSettings().setAttribute(3, True)
 
         # Setup menu bar
         menubar = self.menuBar()
