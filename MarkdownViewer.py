@@ -106,7 +106,7 @@ class WatcherThread(QtCore.QThread):
             if last_modified != current_modified:
                 last_modified = current_modified
                 f = open(self.filename)
-                html = markdown.markdown(f.read())
+                html = markdown.markdown(unicode(f.read(), 'utf-8'))
                 f.close()
                 self.emit(QtCore.SIGNAL('update(QString)'), html)
             time.sleep(0.5)
