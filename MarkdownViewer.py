@@ -105,13 +105,10 @@ class WatcherThread(QtCore.QThread):
             current_modified = os.path.getmtime(self.filename)
             if last_modified != current_modified:
                 last_modified = current_modified
-                f = open(self.filename)
-                args = ['pandoc', '--from=markdown', '--smart']
+                args = ['pandoc', '--from=markdown', '-thtml', '--smart', '--standalone', self.filename]
                 p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                text = unicode(f.read(), 'utf-8').encode('utf8')
-                html = p.communicate(text)[0]
-                f.close()
-                self.emit(QtCore.SIGNAL('update(QString)'), html)
+                html = p.communicate()[0]
+                self.emit(QtCore.SIGNAL('update(QString)'), html.decode('utf8'))
             time.sleep(0.5)
 
 def main():
