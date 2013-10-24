@@ -1,1 +1,2 @@
-@start pythonw %~dp0\MarkdownViewer.py %*
+cd /D %~dp0
+@start pythonw MarkdownViewer.py %*

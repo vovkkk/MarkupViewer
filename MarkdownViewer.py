@@ -27,12 +27,12 @@ MarkdownViewer
 
 Matthew Borgerson <mborgerson@gmail.com>
 """
-import sys, time, os, markdown
+import sys, time, os, subprocess
 from PyQt4 import QtCore, QtGui, QtWebKit
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
-stylesheet_default = 'default.css'
+stylesheet_default = 'github.css'
 
 class App(QtGui.QMainWindow):
     def __init__(self, parent=None, filename=''):
@@ -45,7 +45,7 @@ class App(QtGui.QMainWindow):
         # Add the WebView control
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
-        
+
         # Enable plugins (Flash, QiuckTime etc.)
         QtWebKit.QWebSettings.globalSettings().setAttribute(3, True)
 
@@ -106,7 +106,10 @@ class WatcherThread(QtCore.QThread):
             if last_modified != current_modified:
                 last_modified = current_modified
                 f = open(self.filename)
-                html = markdown.markdown(unicode(f.read(), 'utf-8'))
+                args = ['pandoc', '--from=markdown', '--smart']
+                p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                text = unicode(f.read(), 'utf-8').encode('utf8')
+                html = p.communicate(text)[0]
                 f.close()
                 self.emit(QtCore.SIGNAL('update(QString)'), html)
             time.sleep(0.5)
