@@ -89,7 +89,17 @@ class App(QtGui.QMainWindow):
         self.update('')
 
     def update(self, text):
+        prev_doc    = self.web_view.page().currentFrame()
+        prev_size   = prev_doc.contentsSize()
+        prev_scroll = prev_doc.scrollPosition()
         self.web_view.setHtml(text)
+        current_doc    = self.web_view.page().currentFrame()
+        current_size   = current_doc.contentsSize()
+        current_scroll = current_doc.scrollPosition()
+        # current_scroll is always 0
+        if prev_scroll.y() > current_scroll.y():
+            ypos = prev_scroll.y() - (prev_size.height() - current_size.height())
+            current_doc.scroll(0, ypos)
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
 
     def set_stylesheet(self, stylesheet='default.css'):
