@@ -53,6 +53,8 @@ class App(QtGui.QMainWindow):
 
         # Enable plugins (Flash, QiuckTime etc.)
         QtWebKit.QWebSettings.globalSettings().setAttribute(3, True)
+        # Open links in default browser
+        self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
 
         # Setup menu bar
         menubar = self.menuBar()
@@ -88,20 +90,7 @@ class App(QtGui.QMainWindow):
 
     def update(self, text):
         self.web_view.setHtml(text)
-        # Open links in default system browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
-        ''' self.stupid_workaround is to make sure that url will be opened only once;
-            it seems (at least on Windows) linkClicked is fired twice:
-            1) LMB is down (press), 2) LMB is up (release)'''
-        self.stupid_workaround = 1
-        def _open(url):
-            if self.stupid_workaround == 1:
-                self.stupid_workaround = 2
-                webbrowser.open_new_tab(url.toString())
-            elif self.stupid_workaround == 2:
-                # reassign to make it ready to handle another click, if any would be
-                self.stupid_workaround = 1
-        self.web_view.linkClicked.connect(_open)
 
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??
