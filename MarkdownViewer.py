@@ -27,7 +27,7 @@ MarkdownViewer
 
 Matthew Borgerson <mborgerson@gmail.com>
 """
-import sys, time, os, subprocess
+import sys, time, os, subprocess, webbrowser
 from PyQt4 import QtCore, QtGui, QtWebKit
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -39,8 +39,13 @@ class App(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self, parent)
 
         # Configure the window
-        self.setGeometry(300, 300, 800, 600)
+        self.setGeometry(0, 488, 640, 532)
         self.setWindowTitle('MarkdownViewer')
+        self.setWindowIcon(QtGui.QIcon('markdown-mark.ico'))
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkdownViewer')
+        except: pass
 
         # Add the WebView control
         self.web_view = QtWebKit.QWebView()
@@ -83,6 +88,20 @@ class App(QtGui.QMainWindow):
 
     def update(self, text):
         self.web_view.setHtml(text)
+        # Open links in default system browser
+        self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
+        ''' self.stupid_workaround is to make sure that url will be opened only once;
+            it seems (at least on Windows) linkClicked is fired twice:
+            1) LMB is down (press), 2) LMB is up (release)'''
+        self.stupid_workaround = 1
+        def _open(url):
+            if self.stupid_workaround == 1:
+                self.stupid_workaround = 2
+                webbrowser.open_new_tab(url.toString())
+            elif self.stupid_workaround == 2:
+                # reassign to make it ready to handle another click, if any would be
+                self.stupid_workaround = 1
+        self.web_view.linkClicked.connect(_open)
 
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??
