@@ -1,4 +1,5 @@
 #!/usr/bin/env
+# coding: utf8
 """
 MarkdownViewer
 * Description: MarkdownViewer is a simple Markdown file viewer written in
@@ -80,6 +81,7 @@ class App(QtGui.QMainWindow):
             for item in sheets:
                 styleMenu.addAction(item)
             self.set_stylesheet(stylesheet_default)
+        self.stats_menu = self.menuBar().addMenu('Stats')
 
         # Start the File Watcher Thread
         thread = WatcherThread(filename)
@@ -93,14 +95,24 @@ class App(QtGui.QMainWindow):
         prev_size   = prev_doc.contentsSize()
         prev_scroll = prev_doc.scrollPosition()
         self.web_view.setHtml(text)
-        current_doc    = self.web_view.page().currentFrame()
-        current_size   = current_doc.contentsSize()
-        current_scroll = current_doc.scrollPosition()
-        # current_scroll is always 0
-        if prev_scroll.y() > current_scroll.y():
+        current_doc  = self.web_view.page().currentFrame()
+        current_size = current_doc.contentsSize()
+        if prev_scroll.y() > 0: # current_doc.scrollPosition() is always 0
             ypos = prev_scroll.y() - (prev_size.height() - current_size.height())
             current_doc.scroll(0, ypos)
+        # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
+        # Statistics:
+        text  = unicode(current_doc.toPlainText())
+        filtered_text = text.replace('\'', '').replace(u'’', '')
+        for c in ('"', u'…', '...', '!', '?', u'¡', u'¿', '/', '\\', ',' , u'‘', u'”', u'“', u'„', u'«', u'»', u'—', '&', '\n'):
+            filtered_text = filtered_text.replace(c, ' ')
+        words = filtered_text.split()
+        lines = text.split('\n')
+        self.stats_menu.clear()
+        self.stats_menu.setTitle( str(len(words)) + ' &words')
+        self.stats_menu.addAction(str(len(text))  + ' characters')
+        self.stats_menu.addAction(str(len(lines)) + ' lines')
 
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??
