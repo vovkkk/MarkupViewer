@@ -28,8 +28,18 @@ MarkdownViewer
 
 Matthew Borgerson <mborgerson@gmail.com>
 """
-import sys, time, os, subprocess, webbrowser
+import sys, time, os, webbrowser
 from PyQt4 import QtCore, QtGui, QtWebKit
+
+via_markdown = via_pandoc = None
+try:
+    import subprocess
+    subprocess.call(['pandoc', '-v'])
+except OSError:
+    try:                import markdown, codecs
+    except ImportError: pass
+    else:               via_markdown = True
+else: via_pandoc = True
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
@@ -135,18 +145,29 @@ class WatcherThread(QtCore.QThread):
             current_modified = os.path.getmtime(self.filename)
             if last_modified != current_modified:
                 last_modified = current_modified
-                args = ['pandoc', '--from=markdown', '-thtml', '--smart', '--standalone', self.filename]
-                p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                html = p.communicate()[0]
-                self.emit(QtCore.SIGNAL('update(QString)'), html.decode('utf8'))
+                if via_markdown:
+                    f = codecs.open(self.filename, encoding='utf-8')
+                    html = markdown.markdown(f.read())
+                    f.close()
+                if via_pandoc:
+                    args = 'pandoc --from=markdown -thtml5 --smart --standalone {0}'.format(self.filename).split()
+                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                    html = p.communicate()[0].decode('utf8')
+                self.emit(QtCore.SIGNAL('update(QString)'), html)
             time.sleep(0.5)
 
 def main():
     if len(sys.argv) != 2: return
     app = QtGui.QApplication(sys.argv)
-    test = App(filename=sys.argv[1])
-    test.show()
-    app.exec_()
+    if not (via_pandoc or via_markdown):
+        QtGui.QMessageBox.critical(QtGui.QWidget(),'MarkdownViewer cannot convert a file',
+            'Please, install one of the following packages:<br>'
+            u'• <a href="https://pythonhosted.org/Markdown/install.html">Markdown</a><br>'
+            u'• <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>')
+    else:
+        test = App(filename=sys.argv[1])
+        test.show()
+        app.exec_()
 
 if __name__ == '__main__':
     main()
