@@ -113,12 +113,25 @@ class App(QtGui.QMainWindow):
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         # Statistics:
+        u'''This is VERY big deal. For instance, how many words:
+                « un lien »
+            Two? One? many markdown editors claims that it’s four (sic!) words… ugh…
+            Another examples:
+                1.5 litres (English)
+                1,5 литра (Russian)
+                10.000 = 10,000 = 10 000
+            Unfortunately, even serious software (e.g. http://liwc.net) fails to
+            count properly. The following implementation is not perfect either,
+            still, more accurate than many others.
+            TODO: statistics — decimals is a huge problem
+        '''
         text  = unicode(current_doc.toPlainText())
         filtered_text = text.replace('\'', '').replace(u'’', '')
-        for c in ('"', u'…', '...', '!', '?', u'¡', u'¿', '/', '\\', ',' , u'‘', u'”', u'“', u'„', u'«', u'»', u'—', '&', '\n'):
+        for c in ('"', u'…', '...', '!', '?', u'¡', u'¿', '/', '\\', '*', ',' , u'‘', u'”', u'“', u'„', u'«', u'»', u'—', '&', '\n'):
             filtered_text = filtered_text.replace(c, ' ')
         words = filtered_text.split()
         lines = text.split('\n')
+        text  = text.replace('\n', '')
         self.stats_menu.clear()
         self.stats_menu.setTitle( str(len(words)) + ' &words')
         self.stats_menu.addAction(str(len(text))  + ' characters')
