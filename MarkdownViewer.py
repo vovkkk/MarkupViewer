@@ -150,7 +150,7 @@ class WatcherThread(QtCore.QThread):
                     html = markdown.markdown(f.read())
                     f.close()
                 if via_pandoc:
-                    args = 'pandoc --from=markdown -thtml5 --smart --standalone {0}'.format(self.filename).split()
+                    args = 'pandoc --from=markdown -thtml5 --smart --standalone'.split() + [self.filename]
                     p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
                     html = p.communicate()[0].decode('utf8')
                 self.emit(QtCore.SIGNAL('update(QString)'), html)
