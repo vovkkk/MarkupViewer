@@ -43,15 +43,18 @@ else: via_pandoc = True
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
-stylesheet_default = 'github.css'
+stylesheet_default = 'default.css'
 
 class App(QtGui.QMainWindow):
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
 
         # Configure the window
+        # TODO: settings (renderer, its arguments, init css) ¿YAML?
+        # TODO: remember/restore geometry in/from @settings
         self.setGeometry(0, 488, 640, 532)
-        self.setWindowTitle('MarkdownViewer')
+        # TODO: full path / only name @settings
+        self.setWindowTitle(u'%s — MarkdownViewer' % os.path.join(os.getcwd(), filename))
         self.setWindowIcon(QtGui.QIcon('markdown-mark.ico'))
         try:
             import ctypes
@@ -63,13 +66,21 @@ class App(QtGui.QMainWindow):
         self.setCentralWidget(self.web_view)
 
         # Enable plugins (Flash, QiuckTime etc.)
+        # TODO: plugins @settings
         QtWebKit.QWebSettings.globalSettings().setAttribute(3, True)
         # Open links in default browser
+        # TODO: ¿ non-default browser @settings ?
         self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
 
         # Setup menu bar
+        # TODO: hide menu?
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
+        searchAction = QtGui.QAction('&Find', self)
+        searchAction.setShortcut('Ctrl+f')
+        searchAction.triggered.connect(self.search_panel)
+        fileMenu.addAction(searchAction)
+        # TODO: meta action for ESC key: hide search panel, then close the window
         exitAction = QtGui.QAction('E&xit', self)
         exitAction.setShortcut('ESC')
         exitAction.setStatusTip('Exit application')
@@ -143,6 +154,24 @@ class App(QtGui.QMainWindow):
         full_path = full_path.replace('\\', '/')
         url = QtCore.QUrl(full_path)
         self.web_view.settings().setUserStyleSheetUrl(url)
+
+    def search_panel(self):
+        search_bar = QtGui.QToolBar()
+        close = QtGui.QPushButton(u'×', self)
+        close.setFlat(True)
+        close.setFixedWidth(24)
+        field = QtGui.QLineEdit()
+        for w in (close, field):
+            search_bar.addWidget(w)
+        self.addToolBar(0x8, search_bar)
+        field.connect(field, QtCore.SIGNAL( "textChanged(QString)"), self.find)
+        field.setFocus()
+
+    def find (self, text):
+        p = self.web_view.page()
+        yaiks = lambda s: p.findText(s, p.FindWrapsAroundDocument and p.HighlightAllOccurrences)
+        yaiks('') # clear prev highlight
+        yaiks(text)
 
 class WatcherThread(QtCore.QThread):
     def __init__(self, filename):
