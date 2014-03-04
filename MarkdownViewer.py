@@ -41,6 +41,9 @@ except OSError:
     else:               via_markdown = True
 else: via_pandoc = True
 
+import locale
+sys_enc = locale.getpreferredencoding()
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
 stylesheet_default = 'default.css'
@@ -54,7 +57,7 @@ class App(QtGui.QMainWindow):
         # TODO: remember/restore geometry in/from @settings
         self.setGeometry(0, 488, 640, 532)
         # TODO: full path / only name @settings
-        self.setWindowTitle(u'%s — MarkdownViewer' % os.path.join(os.getcwd(), filename))
+        self.setWindowTitle(u'%s — MarkdownViewer' % unicode(os.path.join(os.getcwd(), filename), sys_enc))
         self.setWindowIcon(QtGui.QIcon('markdown-mark.ico'))
         try:
             import ctypes
@@ -102,6 +105,7 @@ class App(QtGui.QMainWindow):
             for item in sheets:
                 styleMenu.addAction(item)
             self.set_stylesheet(stylesheet_default)
+        self.toc = self.menuBar().addMenu('Table of content')
         self.stats_menu = self.menuBar().addMenu('Stats')
 
         # Start the File Watcher Thread
@@ -116,11 +120,11 @@ class App(QtGui.QMainWindow):
         prev_size   = prev_doc.contentsSize()
         prev_scroll = prev_doc.scrollPosition()
         self.web_view.setHtml(text)
-        current_doc  = self.web_view.page().currentFrame()
-        current_size = current_doc.contentsSize()
-        if prev_scroll.y() > 0: # current_doc.scrollPosition() is always 0
+        self.current_doc  = self.web_view.page().currentFrame()
+        current_size = self.current_doc.contentsSize()
+        if prev_scroll.y() > 0: # self.current_doc.scrollPosition() is always 0
             ypos = prev_scroll.y() - (prev_size.height() - current_size.height())
-            current_doc.scroll(0, ypos)
+            self.current_doc.scroll(0, ypos)
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         # Statistics:
@@ -136,7 +140,7 @@ class App(QtGui.QMainWindow):
             still, more accurate than many others.
             TODO: statistics — decimals is a huge problem
         '''
-        text  = unicode(current_doc.toPlainText())
+        text  = unicode(self.current_doc.toPlainText())
         filtered_text = text.replace('\'', '').replace(u'’', '')
         for c in ('"', u'…', '...', '!', '?', u'¡', u'¿', '/', '\\', '*', ',' , u'‘', u'”', u'“', u'„', u'«', u'»', u'—', '&', '\n'):
             filtered_text = filtered_text.replace(c, ' ')
@@ -147,6 +151,29 @@ class App(QtGui.QMainWindow):
         self.stats_menu.setTitle( str(len(words)) + ' &words')
         self.stats_menu.addAction(str(len(text))  + ' characters')
         self.stats_menu.addAction(str(len(lines)) + ' lines')
+        # TOC
+        headers = []
+        for i in xrange(1, 6):
+            first = self.current_doc.findFirstElement('h%d'%i)
+            if len(first.tagName()) > 0:
+                headers.append(first)
+                break
+        while True:
+            next = first.nextSibling()
+            if len(next.tagName()) == 0:
+                break
+            else:
+                first = next
+                if 'H' in next.tagName(): headers.append(next)
+        for n, h in enumerate(headers, start=1):
+            try:               indent = int(h.tagName()[1:])
+            except ValueError: break # cannot make it integer, means no headers
+            vars(self)['toc_nav%d'%n] = QtGui.QAction('h%d:%s%s'% (indent, '  '*indent , h.toPlainText()), self)
+            vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
+            self.toc.addAction(vars(self)['toc_nav%d'%n])
+
+    def _scroll(self, header):
+        self.current_doc.setScrollPosition(QtCore.QPoint(0, header.geometry().top()))
 
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??
@@ -157,21 +184,32 @@ class App(QtGui.QMainWindow):
 
     def search_panel(self):
         search_bar = QtGui.QToolBar()
-        close = QtGui.QPushButton(u'×', self)
-        close.setFlat(True)
-        close.setFixedWidth(24)
-        field = QtGui.QLineEdit()
-        for w in (close, field):
+        for v, t in (('close', u'×'), ('case', 'Aa'), ('wrap', u'∞'), ('high', u'💡'), ('next', u'↓'), ('prev', u'↑')):
+            vars(self)[v] = QtGui.QPushButton(t, self)
+        self.field = QtGui.QLineEdit()
+        def _toggle_btn():
+            self.field.setFocus()
+            self.find(self.field.text())
+        for w in (self.close, self.case, self.wrap, self.high, self.field, self.next, self.prev):
             search_bar.addWidget(w)
+            if type(w) == QtGui.QPushButton:
+                w.setFlat(True)
+                w.setFixedWidth(36)
+                if w is self.case or w is self.wrap or w is self.high:
+                    w.setCheckable(True)
+                    w.setFixedWidth(24)
+                    w.clicked.connect(_toggle_btn)
         self.addToolBar(0x8, search_bar)
-        field.connect(field, QtCore.SIGNAL( "textChanged(QString)"), self.find)
-        field.setFocus()
+        self.field.textChanged.connect(self.find)
+        self.field.setFocus()
 
     def find (self, text):
         p = self.web_view.page()
-        yaiks = lambda s: p.findText(s, p.FindWrapsAroundDocument and p.HighlightAllOccurrences)
-        yaiks('') # clear prev highlight
-        yaiks(text)
+        case = p.FindFlags(2) if self.case.isChecked() else p.FindFlags(0)
+        wrap = p.FindFlags(4) if self.wrap.isChecked() else p.FindFlags(0)
+        high = p.FindFlags(8) if self.high.isChecked() else p.FindFlags(0)
+        p.findText('', p.FindFlags(8)) # clear prev highlight
+        p.findText(text, wrap | case | high)
 
 class WatcherThread(QtCore.QThread):
     def __init__(self, filename):
