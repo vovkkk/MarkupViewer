@@ -1,0 +1,59 @@
+TODO (8)
+  ☐ .\MarkdownViewer.py:56" settings (renderer, its arguments, init css) ¿YAML?"
+  ☐ .\MarkdownViewer.py:57" remember/restore geometry in/from @settings"
+  ☐ .\MarkdownViewer.py:59" full path / only name @settings"
+  ☐ .\MarkdownViewer.py:72" plugins @settings"
+  ☐ .\MarkdownViewer.py:75" ¿ non-default browser @settings ?"
+  ☐ .\MarkdownViewer.py:79" hide menu?"
+  ☐ .\MarkdownViewer.py:86" meta action for ESC key: hide search panel, then close the window"
+  ☐ .\MarkdownViewer.py:141" statistics — decimals is a huge problem"
+
+File:
+  ☐ open [ctrl+o]
+  ☐ save [ctrl+s]
+     as html, docx, other formats pandoc supports
+  ☐ settings/prefs [ctrl+p]
+  ☐ print
+  ☐ edit [ctrl+e]
+    get editor from settings, fallback to notepad.exe
+
+CSS:
+  ☐ real GitHub theme, pixel-perfect
+  ☐ improve Github-akin theme
+    ☐ wrap code
+    ☐ responsive as default one
+  ☐ other themes ¿ Bitbucket, Solorized, Dark ?
+    JODYHiGHROLLER theme — oh, I gotta make it ☺
+    or maybe… DA THEME FO REAL PLAYAZ
+  ☐ staff css files, e.g. keep the current theme but set all margins to zero [probably new menu View]
+
+WebView:
+  ☐ toc needs handle updates properly instead of spawn dups @today
+  ☐ drag&drop
+  ☐ zoom in/out
+  ☐ tooltip for links
+  ☐ scroll to changed part [seems tricky]
+  Selection:
+    ☐ statistics
+    ☐ copy as html/rtf
+  ☐ support all formats pandoc_readers support
+    and more, e.g. creole isnt in pandoc currently
+  ☐ GitHub emojicons :tophat: yes, please!!
+  ☐ validate links
+
+Search:
+  ☐ find some monochrome icons [16×16px]
+  ☐ make behavior of search more predictable [it sucks currently, tbh]
+    e.g. if sth is found, user press highlight, press it again, search moves to the next result — it ought to stay where it was
+  ☐ next/prev buttons [enter, shift+enter]
+
+App [overall]:
+  ☐ new name [due to support other formats]
+  ☐ make exe
+  ☐ installer
+  ☐ ¿ github pages ?
+  ☐ ¿ linux ?
+
+＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
+Archive:
+  ✔ load local pics w/o full path @project(WebView)

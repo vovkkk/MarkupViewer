@@ -112,15 +112,16 @@ class App(QtGui.QMainWindow):
         thread = WatcherThread(filename)
         self.connect(thread, QtCore.SIGNAL('update(QString)'), self.update)
         thread.start()
-
+        self.filename = filename
         self.update('')
 
     def update(self, text):
         prev_doc    = self.web_view.page().currentFrame()
         prev_size   = prev_doc.contentsSize()
         prev_scroll = prev_doc.scrollPosition()
-        self.web_view.setHtml(text)
+        self.web_view.setContent(QtCore.QString(text).toUtf8(), baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
         self.current_doc  = self.web_view.page().currentFrame()
+        print self.current_doc.baseUrl()
         current_size = self.current_doc.contentsSize()
         if prev_scroll.y() > 0: # self.current_doc.scrollPosition() is always 0
             ypos = prev_scroll.y() - (prev_size.height() - current_size.height())
@@ -168,7 +169,7 @@ class App(QtGui.QMainWindow):
         for n, h in enumerate(headers, start=1):
             try:               indent = int(h.tagName()[1:])
             except ValueError: break # cannot make it integer, means no headers
-            vars(self)['toc_nav%d'%n] = QtGui.QAction('h%d:%s%s'% (indent, '  '*indent , h.toPlainText()), self)
+            vars(self)['toc_nav%d'%n] = QtGui.QAction('h%d:%s%s'% (indent, ' '*4*indent , h.toPlainText()), self)
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
 
@@ -230,9 +231,16 @@ class WatcherThread(QtCore.QThread):
                     html = markdown.markdown(f.read())
                     f.close()
                 if via_pandoc:
-                    args = 'pandoc --from=markdown -thtml5 --smart --standalone'.split() + [self.filename]
-                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                    html = p.communicate()[0].decode('utf8')
+                    if self.filename.split('.')[-1] == 'creole':
+                        from creole import creole2html
+                        import codecs
+                        f = codecs.open(self.filename, encoding='utf-8')
+                        html = creole2html(f.read())
+                        f.close()
+                    else:
+                        args = 'pandoc --from=markdown -thtml5 --smart --standalone'.split() + [self.filename]
+                        p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                        html = p.communicate()[0].decode('utf8')
                 self.emit(QtCore.SIGNAL('update(QString)'), html)
             time.sleep(0.5)
 
