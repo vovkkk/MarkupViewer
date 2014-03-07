@@ -28,7 +28,7 @@ MarkdownViewer
 
 Matthew Borgerson <mborgerson@gmail.com>
 """
-import sys, time, os, webbrowser
+import sys, time, os, webbrowser, importlib, itertools, locale
 from PyQt4 import QtCore, QtGui, QtWebKit
 
 via_markdown = via_pandoc = None
@@ -41,8 +41,76 @@ except OSError:
     else:               via_markdown = True
 else: via_pandoc = True
 
-import locale
 sys_enc = locale.getpreferredencoding()
+
+
+class SetuptheReader:
+    """a knot of methods related to readers: which one need to be used, is it available etc.
+    basic usecase:
+        reader, writer = SetuptheReader._for(filename)
+        html = writer(unicode_object)
+    """
+    # TODO: get readers definitions from settings
+
+    readers = (('markdown', 'md mdown markdn markdown'),
+               ('docbook', 'dbk xml'),
+               ('latex', 'tex'))
+    tmp_readers = 'creole rst textile opml'
+
+    @classmethod
+    def _for(self, filename):
+        file_ext = filename.split('.')[-1].lower()
+        return self.is_available(self.reader(file_ext))
+
+    @classmethod
+    def mapping_formats(self, readers=''):
+        ''' get tuple   (('reader1', 'ext1 ext2 ...'), ...)
+            return dict {'ext1': 'reader1', ...}'''
+        # why: make it simple for user to redefine readers for file extensions
+        omg = lambda d: itertools.imap(lambda t: (t, d[0]), d[1].split())
+        return {e: r for e, r in itertools.chain(*itertools.imap(omg, readers))}
+
+    @classmethod
+    def readers_names(self):
+        names = [d[0] for d in self.readers]
+        names.extend(self.tmp_readers.split())
+        return names
+
+    @classmethod
+    def reader(self, file_ext):
+        formats = self.mapping_formats(self.readers)
+        if file_ext == ('txt' or ''):
+            pass # get the reader from settings, markdown by default
+        elif any(f for f in self.tmp_readers.split() if f == file_ext):
+            reader = file_ext
+        elif file_ext in formats.keys():
+            reader = formats[file_ext]
+        else:
+            reader = None
+        return reader
+
+    @classmethod
+    def is_available(self, reader):
+        via_pandoc = False
+        if via_pandoc and (reader != 'creole'):
+            try:            subprocess.call(['pandoc', '-v'])
+            except OSError: via_pandoc = False
+            else:           return reader
+        elif not via_pandoc:
+            writers = {
+                'creole'  : ('creole',        'creole2html'),
+                'markdown': ('markdown',      'markdown'),
+                'rst'     : ('docutils.core', 'publish_string'),
+                'textile' : ('textile',       'textile'),
+                'docbook' : 0,
+                'latex'   : 'latex2markdown.LaTeX2Markdown',
+                'opml'    : 0
+                }
+            try:
+                writer = getattr(importlib.import_module(writers[reader][0]), writers[reader][1])
+            except ImportError: return False
+            else:               return (reader, writer)
+
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
