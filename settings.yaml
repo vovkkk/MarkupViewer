@@ -52,7 +52,9 @@ geometry: [0, 488, 640, 532]
 show_full_path: true
 
 plugins: true
-plugins_decription: |
+plugins_description: |
   enable Flash, QiuckTime etc. plugins, if they are available
 
 style: default.css
+style_description: |
+  filename of stylesheet to load initially

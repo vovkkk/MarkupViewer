@@ -28,7 +28,7 @@ MarkdownViewer
 
 Matthew Borgerson <mborgerson@gmail.com>
 """
-import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml
+import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml, subprocess
 from PyQt4 import QtCore, QtGui, QtWebKit
 
 sys_enc = locale.getpreferredencoding()
@@ -175,7 +175,7 @@ class App(QtGui.QMainWindow):
         prev_doc    = self.web_view.page().currentFrame()
         prev_size   = prev_doc.contentsSize()
         prev_scroll = prev_doc.scrollPosition()
-        self.web_view.setContent(QtCore.QString(text).toUtf8(), baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
+        self.web_view.setHtml(text, baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
         self.current_doc  = self.web_view.page().currentFrame()
         current_size = self.current_doc.contentsSize()
         if prev_scroll.y() > 0: # self.current_doc.scrollPosition() is always 0
@@ -298,10 +298,11 @@ class WatcherThread(QtCore.QThread):
                 else:
                     with io.open(self.filename, 'r', encoding='utf8') as f:
                         text = f.read()
-                        if reader == 'rst':
-                            html = writer(text, writer_name='html', settings_overrides={'stylesheet_path': ''})['body']
-                        else:
-                            html = writer(text)
+                    if reader == 'rst':
+                        html = writer(text, writer_name='html', settings_overrides={'stylesheet_path': ''})['body']
+                    else:
+                        html = writer(text)
+
                 self.emit(QtCore.SIGNAL('update(QString)'), html)
             time.sleep(0.5)
 

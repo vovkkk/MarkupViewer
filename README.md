@@ -1,41 +1,53 @@
-MarkdownViewer
-==============
-MarkdownViewer is a simple Markdown file viewer written in Python. I wanted an
-easy way to view Markdown files, so I hacked this together...it isn't pretty,
-but it is functional. The view will be refreshed when the opened file is saved,
-allowing you to use whatever editor you'd like and see the results immediately.
+# MarkupViewer
+MarkupViewer is a simple previewer for various markup formats. The view will be refreshed when the opened file is saved, allowing you to use whatever editor you’d like and see the results immediately.
 
-Features
---------
-* Cross Platform
+## Features
+* Cross Platform (tested only on Windows though)
 * Updates when the file is changed
 * Stylesheet support
+* View various markup formats (asterisk determines formats require Pandoc to be installed):
+    * Creole
+    * DocBook**\***
+    * Markdown, Pandoc-flavour**\***, GitHub-flavour**\***
+    * reStructuredText
+    * LaTeX**\***
+    * OPML**\***
+    * Textile
+* Linked table of content
+* Statistics — words, characters and lines count
 
-Dependencies
-------------
-* [Python](http://python.org/) 2.6 or 2.7
+## Dependencies
+* [Python](http://python.org/) 2.7
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
-* [Markdown Python Package](http://pypi.python.org/pypi/Markdown) (Available via PIP)
+* Optional dependencies (any single one of them will be enough for correct support of appropriate format(s); asterisk determines packages are required for support of all declared formats):
+    * [python-creole](https://pypi.python.org/pypi/python-creole/1.1.1)**\***
+    * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)**\***
+    * [Markdown](http://pypi.python.org/pypi/Markdown)
+    * [docutils](https://pypi.python.org/pypi/docutils/0.11)
+    * [textile](https://pypi.python.org/pypi/textile/)
 
-Usage
------
-  ```
-  $ python MarkdownViewer.py <file>
-  ```
+## Usage
+```
+$ python MarkupViewer.py <file>
+```
 
-  To automatically open a Markdown file with this viewer in Windows, associate
-  the filetype with the included .bat file. You can apply styles by dropping
-  your stylesheets in the stylesheets/ directory next to this script and
-  selecting one from the Style menu.
+To automatically open a file with this viewer in Windows, associate the filetype with the included `.bat` file.
 
-Contributing
-------------
+You can apply styles by dropping your stylesheets in the `stylesheets\` directory next to this script and selecting one from the Style menu.
+
+## Settings
+`settings.yaml` offers many options to fiddle with — simply open that file in any plain text editor.  
+*NOTE*, options without description are not implemented yet, they’re drafts… tbh, even some with descriptions are still drafts.
+
+## Contributing
 Feel free to make improvements. Fork and send me a pull request.
 
-Credit
-------
+## Credit
 The bundled style came from [here](https://github.com/simonlc/Markdown-CSS).
 
-More Info
----------
-Learn more about Markdown and the Markdown syntax [here](http://daringfireball.net/projects/markdown/).
+
+## Licence
+© 2013 Matthew Borgerson <mborgerson@gmail.com>  
+© 2014 Vova Kolobok <vovkkk@ya.ru>  
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
