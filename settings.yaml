@@ -1,0 +1,58 @@
+via_pandoc: false
+via_pandoc_description: |
+  use pandoc or not; some formats can be viewed only via pandoc (docbook, opml,
+  gfm, latex);
+  make sure pandoc installed and presented in PATH
+
+pandoc_path: "pandoc"
+pandoc_path_description: |
+  in case of default installation you do NOT need to change pandoc_path;
+  otherwise, specify the full path to pandoc exetutable
+
+pandoc_markdown: markdown
+pandoc_markdown_description: |
+  pandoc_markdown option defines how pandoc should treat markdown files:
+  markdown          (pandoc’s extended markdown),
+  markdown_strict   (original unextended markdown),
+  markdown_phpextra (PHP Markdown Extra extended markdown),
+  markdown_github   (GitHub extended markdown);
+
+pandoc_args: "-thtml5 --smart --standalone"
+pandoc_args_description: |
+  additional arguments (see pandoc docs for details)
+  NOTICE about -thtml5: you can remove 5 to get XHTML 1, but obviously you
+  cannot remove -t argument completely
+
+formats:
+  creole  : creole
+  docbook : dbk xml
+  latex   : tex
+  markdown: md mdown markdn markdown txt
+  opml    : opml
+  rst     : rst
+  textile : textile
+formats_description: |
+  formats defines how to treat file extensions, you can freely redefine them,
+  however, beware of duplications — they may lead to unexpected results
+
+no_extension: markdown
+no_extension_description: |
+  no_extention defines how to treat files with no extensions (e.g. 'README')
+  or uknown, i.e. the one absents in formats, extension (e.g. 'readme.blah');
+  possible values are creole, docbook, latex, markdown, opml, rst, textile
+
+editor: sublime_text -n
+editor_description: |
+  executable with args to edit file, if it’s not in PATH you have to specify the
+  full path;
+  fallback to notepad.exe
+
+geometry: [0, 488, 640, 532]
+
+show_full_path: true
+
+plugins: true
+plugins_decription: |
+  enable Flash, QiuckTime etc. plugins, if they are available
+
+style: default.css

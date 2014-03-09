@@ -28,20 +28,22 @@ MarkdownViewer
 
 Matthew Borgerson <mborgerson@gmail.com>
 """
-import sys, time, os, webbrowser, importlib, itertools, locale
+import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml
 from PyQt4 import QtCore, QtGui, QtWebKit
 
-via_markdown = via_pandoc = None
-try:
-    import subprocess
-    subprocess.call(['pandoc', '-v'])
-except OSError:
-    try:                import markdown, codecs
-    except ImportError: pass
-    else:               via_markdown = True
-else: via_pandoc = True
-
 sys_enc = locale.getpreferredencoding()
+
+
+class Settings:
+    user_source = os.path.join(os.getenv('APPDATA'), 'MarkdownViewer/settings.yaml')
+    app_source  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yaml')
+    settings_file = user_source if os.path.exists(user_source) else app_source
+    with io.open(settings_file, 'r', encoding='utf8') as f:
+        settings = yaml.safe_load(f)
+
+    @classmethod
+    def get(self, key=''):
+        return self.settings[key]
 
 
 class SetuptheReader:
@@ -50,12 +52,7 @@ class SetuptheReader:
         reader, writer = SetuptheReader._for(filename)
         html = writer(unicode_object)
     """
-    # TODO: get readers definitions from settings
-
-    readers = (('markdown', 'md mdown markdn markdown'),
-               ('docbook', 'dbk xml'),
-               ('latex', 'tex'))
-    tmp_readers = 'creole rst textile opml'
+    readers = Settings.get('formats')
 
     @classmethod
     def _for(self, filename):
@@ -64,64 +61,56 @@ class SetuptheReader:
 
     @classmethod
     def mapping_formats(self, readers=''):
-        ''' get tuple   (('reader1', 'ext1 ext2 ...'), ...)
+        ''' get    dict {'reader1': 'ext1 ext2 ...', ...}
             return dict {'ext1': 'reader1', ...}'''
         # why: make it simple for user to redefine readers for file extensions
         omg = lambda d: itertools.imap(lambda t: (t, d[0]), d[1].split())
-        return {e: r for e, r in itertools.chain(*itertools.imap(omg, readers))}
+        return {e: r for e, r in itertools.chain(*itertools.imap(omg, readers.iteritems()))}
 
     @classmethod
     def readers_names(self):
-        names = [d[0] for d in self.readers]
-        names.extend(self.tmp_readers.split())
-        return names
+        return self.readers.keys()
 
     @classmethod
     def reader(self, file_ext):
         formats = self.mapping_formats(self.readers)
-        if file_ext == ('txt' or ''):
-            pass # get the reader from settings, markdown by default
-        elif any(f for f in self.tmp_readers.split() if f == file_ext):
-            reader = file_ext
-        elif file_ext in formats.keys():
+        if file_ext in formats.keys():
             reader = formats[file_ext]
         else:
-            reader = None
+            reader = Settings.get('no_extension')
         return reader
 
     @classmethod
     def is_available(self, reader):
-        via_pandoc = False
+        via_pandoc = Settings.get('via_pandoc')
         if via_pandoc and (reader != 'creole'):
             try:            subprocess.call(['pandoc', '-v'])
             except OSError: via_pandoc = False
-            else:           return reader
-        elif not via_pandoc:
+            else:           return (reader, 'pandoc')
+        elif not via_pandoc or reader == 'creole':
             writers = {
                 'creole'  : ('creole',        'creole2html'),
                 'markdown': ('markdown',      'markdown'),
-                'rst'     : ('docutils.core', 'publish_string'),
-                'textile' : ('textile',       'textile'),
-                'docbook' : 0,
-                'latex'   : 'latex2markdown.LaTeX2Markdown',
-                'opml'    : 0
+                'rst'     : ('docutils.core', 'publish_parts'),
+                'textile' : ('textile',       'textile')
                 }
+            fail = (KeyError, ImportError)
             try:
                 writer = getattr(importlib.import_module(writers[reader][0]), writers[reader][1])
-            except ImportError: return False
-            else:               return (reader, writer)
-
+            except fail:
+                return (reader, False)
+            else:
+                return (reader, writer)
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
-stylesheet_default = 'default.css'
+stylesheet_default = Settings.get('style')
 
 class App(QtGui.QMainWindow):
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
 
         # Configure the window
-        # TODO: settings (renderer, its arguments, init css) ¿YAML?
         # TODO: remember/restore geometry in/from @settings
         self.setGeometry(0, 488, 640, 532)
         # TODO: full path / only name @settings
@@ -137,8 +126,7 @@ class App(QtGui.QMainWindow):
         self.setCentralWidget(self.web_view)
 
         # Enable plugins (Flash, QiuckTime etc.)
-        # TODO: plugins @settings
-        QtWebKit.QWebSettings.globalSettings().setAttribute(3, True)
+        QtWebKit.QWebSettings.globalSettings().setAttribute(3, Settings.get('plugins'))
         # Open links in default browser
         # TODO: ¿ non-default browser @settings ?
         self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
@@ -173,7 +161,7 @@ class App(QtGui.QMainWindow):
             for item in sheets:
                 styleMenu.addAction(item)
             self.set_stylesheet(stylesheet_default)
-        self.toc = self.menuBar().addMenu('Table of content')
+        self.toc = self.menuBar().addMenu('Table of &content')
         self.stats_menu = self.menuBar().addMenu('Stats')
 
         # Start the File Watcher Thread
@@ -189,7 +177,6 @@ class App(QtGui.QMainWindow):
         prev_scroll = prev_doc.scrollPosition()
         self.web_view.setContent(QtCore.QString(text).toUtf8(), baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
         self.current_doc  = self.web_view.page().currentFrame()
-        print self.current_doc.baseUrl()
         current_size = self.current_doc.contentsSize()
         if prev_scroll.y() > 0: # self.current_doc.scrollPosition() is always 0
             ypos = prev_scroll.y() - (prev_size.height() - current_size.height())
@@ -221,6 +208,7 @@ class App(QtGui.QMainWindow):
         self.stats_menu.addAction(str(len(text))  + ' characters')
         self.stats_menu.addAction(str(len(lines)) + ' lines')
         # TOC
+        self.toc.clear()
         headers = []
         for i in xrange(1, 6):
             first = self.current_doc.findFirstElement('h%d'%i)
@@ -290,37 +278,42 @@ class WatcherThread(QtCore.QThread):
 
     def run(self):
         last_modified = 0
+        reader, writer = SetuptheReader._for(self.filename)
+        if writer == 'pandoc':
+            pandoc_path     = Settings.get('pandoc_path')
+            pandoc_markdown = Settings.get('pandoc_markdown')
+            pandoc_args     = Settings.get('pandoc_args')
+        if not writer:
+            # TODO: make a proper error message
+            return reader
         while True:
             current_modified = os.path.getmtime(self.filename)
             if last_modified != current_modified:
                 last_modified = current_modified
-                if via_markdown:
-                    f = codecs.open(self.filename, encoding='utf-8')
-                    html = markdown.markdown(f.read())
-                    f.close()
-                if via_pandoc:
-                    if self.filename.split('.')[-1] == 'creole':
-                        from creole import creole2html
-                        import codecs
-                        f = codecs.open(self.filename, encoding='utf-8')
-                        html = creole2html(f.read())
-                        f.close()
-                    else:
-                        args = 'pandoc --from=markdown -thtml5 --smart --standalone'.split() + [self.filename]
-                        p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                        html = p.communicate()[0].decode('utf8')
+                if writer == 'pandoc':
+                    reader = pandoc_markdown if reader == 'markdown' else reader
+                    args = ('%s --from=%s %s'%(pandoc_path, reader, pandoc_args)).split() + [self.filename]
+                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                    html = p.communicate()[0].decode('utf8')
+                else:
+                    with io.open(self.filename, 'r', encoding='utf8') as f:
+                        text = f.read()
+                        if reader == 'rst':
+                            html = writer(text, writer_name='html', settings_overrides={'stylesheet_path': ''})['body']
+                        else:
+                            html = writer(text)
                 self.emit(QtCore.SIGNAL('update(QString)'), html)
             time.sleep(0.5)
 
 def main():
     if len(sys.argv) != 2: return
     app = QtGui.QApplication(sys.argv)
-    if not (via_pandoc or via_markdown):
-        QtGui.QMessageBox.critical(QtGui.QWidget(),'MarkdownViewer cannot convert a file',
-            'Please, install one of the following packages:<br>'
-            u'• <a href="https://pythonhosted.org/Markdown/install.html">Markdown</a><br>'
-            u'• <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>')
-    else:
+    # if not (via_pandoc or via_markdown):
+    #     QtGui.QMessageBox.critical(QtGui.QWidget(),'MarkdownViewer cannot convert a file',
+    #         'Please, install one of the following packages:<br>'
+    #         u'• <a href="https://pythonhosted.org/Markdown/install.html">Markdown</a><br>'
+    #         u'• <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>')
+    if True:
         test = App(filename=sys.argv[1])
         test.show()
         app.exec_()

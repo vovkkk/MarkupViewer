@@ -1,8 +1,6 @@
 TODO (8)
-  ☐ .\MarkdownViewer.py:56" settings (renderer, its arguments, init css) ¿YAML?"
   ☐ .\MarkdownViewer.py:57" remember/restore geometry in/from @settings"
   ☐ .\MarkdownViewer.py:59" full path / only name @settings"
-  ☐ .\MarkdownViewer.py:72" plugins @settings"
   ☐ .\MarkdownViewer.py:75" ¿ non-default browser @settings ?"
   ☐ .\MarkdownViewer.py:79" hide menu?"
   ☐ .\MarkdownViewer.py:86" meta action for ESC key: hide search panel, then close the window"
@@ -28,7 +26,6 @@ CSS:
   ☐ staff css files, e.g. keep the current theme but set all margins to zero [probably new menu View]
 
 WebView:
-  ☐ toc needs handle updates properly instead of spawn dups @today
   ☐ drag&drop
   ☐ zoom in/out
   ☐ tooltip for links
@@ -36,8 +33,6 @@ WebView:
   Selection:
     ☐ statistics
     ☐ copy as html/rtf
-  ☐ support all formats pandoc_readers support
-    and more, e.g. creole isnt in pandoc currently
   ☐ GitHub emojicons :tophat: yes, please!!
   ☐ validate links
 
@@ -56,4 +51,10 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ support all formats pandoc_readers support @project(WebView)
+    and more, e.g. creole isnt in pandoc currently
+  ✔ settings (renderer, its arguments, init css) ¿YAML?
+    ¡YAML!
+  ✔ plugins @settings
+  ✔ toc needs handle updates properly instead of spawn dups @project(WebView)
   ✔ load local pics w/o full path @project(WebView)
