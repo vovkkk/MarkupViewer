@@ -1,4 +1,4 @@
-# MarkupViewer
+# MarkupViewer :sad:
 MarkupViewer is a simple previewer for various markup formats. The view will be refreshed when the opened file is saved, allowing you to use whatever editor you’d like and see the results immediately.
 
 ## Features
@@ -7,11 +7,11 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * Stylesheet support
 * View various markup formats (asterisk determines formats require Pandoc to be installed):
     * Creole
-    * DocBook**\***
-    * Markdown, Pandoc-flavour**\***, GitHub-flavour**\***
+    * DocBook<b>\*</b>
+    * Markdown, Pandoc-flavour<b>\*</b>, GitHub-flavour<b>\*</b>
     * reStructuredText
-    * LaTeX**\***
-    * OPML**\***
+    * LaTeX<b>\*</b>
+    * OPML<b>\*</b>
     * Textile
 * Linked table of content
 * Statistics — words, characters and lines count
@@ -20,8 +20,8 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * [Python](http://python.org/) 2.7
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
 * Optional dependencies (any single one of them will be enough for correct support of appropriate format(s); asterisk determines packages are required for support of all declared formats):
-    * [python-creole](https://pypi.python.org/pypi/python-creole/1.1.1)**\***
-    * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)**\***
+    * [python-creole](https://pypi.python.org/pypi/python-creole/1.1.1)<b>\*</b>
+    * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)<b>\*</b>
     * [Markdown](http://pypi.python.org/pypi/Markdown)
     * [docutils](https://pypi.python.org/pypi/docutils/0.11)
     * [textile](https://pypi.python.org/pypi/textile/)
