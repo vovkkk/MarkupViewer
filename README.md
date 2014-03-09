@@ -1,4 +1,4 @@
-# MarkupViewer :sad:
+# MarkupViewer
 MarkupViewer is a simple previewer for various markup formats. The view will be refreshed when the opened file is saved, allowing you to use whatever editor you’d like and see the results immediately.
 
 ## Features
