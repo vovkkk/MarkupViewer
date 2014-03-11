@@ -1,10 +1,9 @@
 TODO (8)
-  ☐ .\MarkdownViewer.py:57" remember/restore geometry in/from @settings"
-  ☐ .\MarkdownViewer.py:59" full path / only name @settings"
-  ☐ .\MarkdownViewer.py:75" ¿ non-default browser @settings ?"
-  ☐ .\MarkdownViewer.py:79" hide menu?"
-  ☐ .\MarkdownViewer.py:86" meta action for ESC key: hide search panel, then close the window"
-  ☐ .\MarkdownViewer.py:141" statistics — decimals is a huge problem"
+  ☐ .\MarkupViewer.py:57" remember/restore geometry in/from @settings"
+  ☐ .\MarkupViewer.py:75" ¿ non-default browser @settings ?"
+  ☐ .\MarkupViewer.py:79" hide menu?"
+  ☐ .\MarkupViewer.py:86" meta action for ESC key: hide search panel, then close the window"
+  ☐ .\MarkupViewer.py:141" statistics — decimals is a huge problem"
 
 File:
   ☐ open [ctrl+o]
@@ -43,7 +42,6 @@ Search:
   ☐ next/prev buttons [enter, shift+enter]
 
 App [overall]:
-  ☐ new name [due to support other formats]
   ☐ make exe
   ☐ installer
   ☐ ¿ github pages ?
@@ -51,6 +49,8 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ new name [due to support other formats] @project(App [overall])
+  ✔ full path / only name @settings
   ✔ support all formats pandoc_readers support @project(WebView)
     and more, e.g. creole isnt in pandoc currently
   ✔ settings (renderer, its arguments, init css) ¿YAML?
