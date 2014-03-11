@@ -1,33 +1,6 @@
-#!/usr/bin/env
+#!python2
 # coding: utf8
-"""
-MarkdownViewer
-* Description: MarkdownViewer is a simple Markdown file viewer written in
-  Python. I wanted an easy way to view Markdown files, so I hacked this
-  together...it isn't pretty, but it is functional. The view will be refreshed
-  when the opened file is saved allowing you to use whatever editor you'd like
-  and see the results immediately.
 
-* Dependencies: PyQt4 and Markdown (the Python package).
-
-* Usage: python MarkdownViewer.py <file>
-  To automatically open a Markdown file with this viewer in Windows, associate
-  the filetype with the included .bat file. You can apply themes by dropping
-  your stylesheets in the stylesheets/ directory next to this script and
-  selecting one from the Style menu.
-
-* Note: Feel free to make improvements. Fork and send me a pull request.
-  http://
-
-* Links
- - PyQt4: http://www.riverbankcomputing.com/software/pyqt/download
- - Markdown (available via PIP): http://pypi.python.org/pypi/Markdown
- - Learn more about Markdown and the Markdown syntax here:
-   http://daringfireball.net/projects/markdown/
- - Installed stylesheets from https://github.com/jasonm23/markdown-css-themes
-
-Matthew Borgerson <mborgerson@gmail.com>
-"""
 import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml, subprocess
 from PyQt4 import QtCore, QtGui, QtWebKit
 
@@ -42,8 +15,8 @@ class Settings:
         settings = yaml.safe_load(f)
 
     @classmethod
-    def get(self, key=''):
-        return self.settings[key]
+    def get(self, key='', default_value=''):
+        return self.settings.get(key, default_value)
 
 
 class SetuptheReader:
@@ -113,10 +86,9 @@ class App(QtGui.QMainWindow):
         # Configure the window
         # TODO: remember/restore geometry in/from @settings
         self.setGeometry(0, 488, 640, 532)
-        # TODO: full path / only name @settings
-        self.setWindowTitle(u'%s — MarkdownViewer' % unicode(os.path.join(os.getcwd(), filename), sys_enc))
+        self.setWindowTitle(u'%s — MarkdownViewer' % unicode(os.path.join(os.getcwd(), filename) if Settings.get('show_full_path', True) else os.path.basename(filename), sys_enc))
         self.setWindowIcon(QtGui.QIcon('markdown-mark.ico'))
-        try:
+        try: # separate icon in the Windows dock
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkdownViewer')
         except: pass
@@ -126,7 +98,7 @@ class App(QtGui.QMainWindow):
         self.setCentralWidget(self.web_view)
 
         # Enable plugins (Flash, QiuckTime etc.)
-        QtWebKit.QWebSettings.globalSettings().setAttribute(3, Settings.get('plugins'))
+        QtWebKit.QWebSettings.globalSettings().setAttribute(3, Settings.get('plugins', False))
         # Open links in default browser
         # TODO: ¿ non-default browser @settings ?
         self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
@@ -135,10 +107,23 @@ class App(QtGui.QMainWindow):
         # TODO: hide menu?
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
+
+        editAction = QtGui.QAction('&Edit', self)
+        editAction.setShortcut('Ctrl+e')
+        print filename
+        editAction.triggered[()].connect(lambda fn=filename: self.edit_file(fn))
+        fileMenu.addAction(editAction)
+
         searchAction = QtGui.QAction('&Find', self)
         searchAction.setShortcut('Ctrl+f')
         searchAction.triggered.connect(self.search_panel)
         fileMenu.addAction(searchAction)
+
+        settingsAction = QtGui.QAction('Set&tings', self)
+        settingsAction.setShortcut('Ctrl+t')
+        settingsAction.triggered[()].connect(lambda fn=Settings.settings_file: self.edit_file(fn))
+        fileMenu.addAction(settingsAction)
+
         # TODO: meta action for ESC key: hide search panel, then close the window
         exitAction = QtGui.QAction('E&xit', self)
         exitAction.setShortcut('ESC')
@@ -170,6 +155,32 @@ class App(QtGui.QMainWindow):
         thread.start()
         self.filename = filename
         self.update('')
+
+        # create searchbar
+        self.search_bar = QtGui.QToolBar()
+        for v, t in (('close', u'×'), ('case', 'Aa'), ('wrap', u'∞'), ('high', u'💡'), ('next', u'↓'), ('prev', u'↑')):
+            vars(self)[v] = QtGui.QPushButton(t, self)
+        self.field = QtGui.QLineEdit()
+        def _toggle_btn(btn=''):
+            self.field.setFocus()
+            self.find(self.field.text(), btn)
+        for w in (self.close, self.case, self.wrap, self.high, self.field, self.next, self.prev):
+            self.search_bar.addWidget(w)
+            if type(w) == QtGui.QPushButton:
+                w.setFlat(True)
+                w.setFixedWidth(36)
+                if any(t for t in (self.case, self.wrap, self.high) if t is w):
+                    w.setCheckable(True)
+                    w.setFixedWidth(24)
+                    w.clicked.connect(_toggle_btn)
+                if any(t for t in (self.next, self.prev) if t is w):
+                    w.pressed[()].connect(lambda btn=w: _toggle_btn(btn))
+        self.field.textChanged.connect(self.find)
+        self.field.returnPressed.connect(_toggle_btn)
+
+    def edit_file(self, fn):
+        args = Settings.get('editor', 'notepad.exe').split() + [fn]
+        subprocess.call(args)
 
     def update(self, text):
         prev_doc    = self.web_view.page().currentFrame()
@@ -240,33 +251,19 @@ class App(QtGui.QMainWindow):
         self.web_view.settings().setUserStyleSheetUrl(url)
 
     def search_panel(self):
-        search_bar = QtGui.QToolBar()
-        for v, t in (('close', u'×'), ('case', 'Aa'), ('wrap', u'∞'), ('high', u'💡'), ('next', u'↓'), ('prev', u'↑')):
-            vars(self)[v] = QtGui.QPushButton(t, self)
-        self.field = QtGui.QLineEdit()
-        def _toggle_btn():
-            self.field.setFocus()
-            self.find(self.field.text())
-        for w in (self.close, self.case, self.wrap, self.high, self.field, self.next, self.prev):
-            search_bar.addWidget(w)
-            if type(w) == QtGui.QPushButton:
-                w.setFlat(True)
-                w.setFixedWidth(36)
-                if w is self.case or w is self.wrap or w is self.high:
-                    w.setCheckable(True)
-                    w.setFixedWidth(24)
-                    w.clicked.connect(_toggle_btn)
-        self.addToolBar(0x8, search_bar)
-        self.field.textChanged.connect(self.find)
+        self.addToolBar(0x8, self.search_bar)
         self.field.setFocus()
+        self.field.selectAll()
 
-    def find (self, text):
+    def find(self, text, btn=''):
         p = self.web_view.page()
+        back = p.FindFlags(1) if btn is self.prev else p.FindFlags(0)
         case = p.FindFlags(2) if self.case.isChecked() else p.FindFlags(0)
         wrap = p.FindFlags(4) if self.wrap.isChecked() else p.FindFlags(0)
         high = p.FindFlags(8) if self.high.isChecked() else p.FindFlags(0)
         p.findText('', p.FindFlags(8)) # clear prev highlight
-        p.findText(text, wrap | case | high)
+        p.findText(text, back | wrap | case | high)
+
 
 class WatcherThread(QtCore.QThread):
     def __init__(self, filename):
