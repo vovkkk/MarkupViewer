@@ -1,6 +1,8 @@
 # MarkupViewer
 MarkupViewer is a simple previewer for various markup formats. The view will be refreshed when the opened file is saved, allowing you to use whatever editor you’d like and see the results immediately.
 
+![](http://storage5.static.itmages.ru/i/14/0314/h_1394820849_1018958_74a6ec8680.png)
+
 ## Features
 * Cross Platform (tested only on Windows though)
 * Updates when the file is changed
@@ -19,12 +21,14 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 ## Dependencies
 * [Python](http://python.org/) 2.7
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
+* [PyYAML](https://pypi.python.org/pypi/PyYAML/3.10)
 * Optional dependencies (any single one of them will be enough for correct support of appropriate format(s); asterisk determines packages are required for support of all declared formats):
     * [python-creole](https://pypi.python.org/pypi/python-creole/1.1.1)<b>\*</b>
     * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)<b>\*</b>
     * [Markdown](http://pypi.python.org/pypi/Markdown)
     * [docutils](https://pypi.python.org/pypi/docutils/0.11)
     * [textile](https://pypi.python.org/pypi/textile/)
+
 
 ## Usage
 ```
@@ -42,6 +46,16 @@ You can apply styles by dropping your stylesheets in the `stylesheets\` director
 ## Contributing
 Feel free to make improvements. Fork and send me a pull request.
 
+### Building standalone app using [PyInstaller](https://github.com/pyinstaller/pyinstaller#installation)
+```
+$ pyinstaller build.spec
+```
+
+Though, docutils and textile packages need to be copied by hand into root of resulted folder `dict\MarkupViewer`
+`..\Python27\Lib\site-packages\docutils-0.11-py2.7.egg\docutils`  
+`..\Python27\Lib\site-packages\textile-2.1.5-py2.7.egg\textile`
+
+
 ## Credit
 The bundled style came from [here](https://github.com/simonlc/Markdown-CSS).
 
@@ -51,3 +65,5 @@ The bundled style came from [here](https://github.com/simonlc/Markdown-CSS).
 © 2014 Vova Kolobok <vovkkk@ya.ru>  
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+markup.ico is based on [the markdown mark](https://github.com/dcurtis/markdown-mark) and dedicated to the public domain.
