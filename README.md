@@ -51,7 +51,7 @@ Feel free to make improvements. Fork and send me a pull request.
 $ pyinstaller build.spec
 ```
 
-Though, docutils and textile packages need to be copied by hand into root of resulted folder `dict\MarkupViewer`
+Though, docutils and textile packages need to be copied by hand into root of resulted folder `dist\MarkupViewer`
 `..\Python27\Lib\site-packages\docutils-0.11-py2.7.egg\docutils`  
 `..\Python27\Lib\site-packages\textile-2.1.5-py2.7.egg\textile`
 

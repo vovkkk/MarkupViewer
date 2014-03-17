@@ -70,14 +70,18 @@ class SetuptheReader:
             fail = (KeyError, ImportError)
             try:
                 writer = getattr(importlib.import_module(writers[reader][0]), writers[reader][1])
-            except fail:
+            except fail as e:
+                print(reader, str(e))
                 return (reader, False)
             else:
+                print(reader, writer)
                 return (reader, writer)
+
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
 stylesheet_default = Settings.get('style')
+
 
 class App(QtGui.QMainWindow):
     def __init__(self, parent=None, filename=''):
@@ -86,8 +90,8 @@ class App(QtGui.QMainWindow):
         # Configure the window
         # TODO: remember/restore geometry in/from @settings
         self.setGeometry(0, 488, 640, 532)
-        self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.join(os.getcwd(), filename) if Settings.get('show_full_path', True) else os.path.basename(filename), sys_enc))
-        self.setWindowIcon(QtGui.QIcon('markdown-mark.ico'))
+        self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(filename) if Settings.get('show_full_path', True) else os.path.basename(filename), sys_enc))
+        self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
         try: # separate icon in the Windows dock
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
@@ -236,7 +240,7 @@ class App(QtGui.QMainWindow):
         for n, h in enumerate(headers, start=1):
             try:               indent = int(h.tagName()[1:])
             except ValueError: break # cannot make it integer, means no headers
-            vars(self)['toc_nav%d'%n] = QtGui.QAction('h%d:%s%s'% (indent, ' '*4*indent , h.toPlainText()), self)
+            vars(self)['toc_nav%d'%n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png'%indent),'%s%s'% ('  '*indent, h.toPlainText()), self)
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
 
@@ -303,8 +307,8 @@ class WatcherThread(QtCore.QThread):
                 self.emit(QtCore.SIGNAL('update(QString)'), html)
             time.sleep(0.5)
 
+
 def main():
-    if len(sys.argv) != 2: return
     app = QtGui.QApplication(sys.argv)
     # if not (via_pandoc or via_markdown):
     #     QtGui.QMessageBox.critical(QtGui.QWidget(),'MarkupViewer cannot convert a file',
@@ -312,7 +316,8 @@ def main():
     #         u'• <a href="https://pythonhosted.org/Markdown/install.html">Markdown</a><br>'
     #         u'• <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>')
     if True:
-        test = App(filename=sys.argv[1])
+        if len(sys.argv) != 2: test = App()
+        else:                  test = App(filename=sys.argv[1])
         test.show()
         app.exec_()
 

@@ -16,9 +16,6 @@ File:
 
 CSS:
   ☐ real GitHub theme, pixel-perfect
-  ☐ improve Github-akin theme
-    ☐ wrap code
-    ☐ responsive as default one
   ☐ other themes ¿ Bitbucket, Solorized, Dark ?
     JODYHiGHROLLER theme — oh, I gotta make it ☺
     or maybe… DA THEME FO REAL PLAYAZ
@@ -49,6 +46,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ improve Github-akin theme @project(CSS)
   ✔ new name [due to support other formats] @project(App [overall])
   ✔ full path / only name @settings
   ✔ support all formats pandoc_readers support @project(WebView)
