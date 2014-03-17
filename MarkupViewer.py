@@ -115,7 +115,7 @@ class App(QtGui.QMainWindow):
         editAction = QtGui.QAction('&Edit', self)
         editAction.setShortcut('Ctrl+e')
         print filename
-        editAction.triggered[()].connect(lambda fn=filename: self.edit_file(fn))
+        editAction.triggered[()].connect(lambda fn='': self.edit_file(fn))
         fileMenu.addAction(editAction)
 
         searchAction = QtGui.QAction('&Find', self)
@@ -154,9 +154,9 @@ class App(QtGui.QMainWindow):
         self.stats_menu = self.menuBar().addMenu('Stats')
 
         # Start the File Watcher Thread
-        thread = WatcherThread(filename)
-        self.connect(thread, QtCore.SIGNAL('update(QString)'), self.update)
-        thread.start()
+        self.thread1 = WatcherThread(filename if filename else os.path.join(os.path.dirname(os.path.realpath(__file__)), 'README.md'))
+        self.connect(self.thread1, QtCore.SIGNAL('update(QString)'), self.update)
+        self.thread1.start()
         self.filename = filename
         self.update('')
 
@@ -181,8 +181,20 @@ class App(QtGui.QMainWindow):
                     w.pressed[()].connect(lambda btn=w: _toggle_btn(btn))
         self.field.textChanged.connect(self.find)
         self.field.returnPressed.connect(_toggle_btn)
+        self.web_view.setAcceptDrops(True)
+        setattr(self.web_view, 'dragEnterEvent', self.dragEnterEvent)
+        setattr(self.web_view, 'dropEvent', self.dropEvent)
+
+    def dragEnterEvent(self, event):
+        event.accept()
+
+    def dropEvent(self, event):
+        fn = event.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
+        self.filename = self.thread1.filename = fn
+        self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(fn) if Settings.get('show_full_path', True) else os.path.basename(fn), sys_enc))
 
     def edit_file(self, fn):
+        if not fn: fn = self.filename
         args = Settings.get('editor', 'notepad.exe').split() + [fn]
         subprocess.call(args)
 

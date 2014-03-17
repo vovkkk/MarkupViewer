@@ -17,6 +17,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
     * Textile
 * Linked table of content
 * Statistics — words, characters and lines count
+* Drag and drop any file on an existing MV window to preview the file
 
 ## Dependencies
 * [Python](http://python.org/) 2.7
