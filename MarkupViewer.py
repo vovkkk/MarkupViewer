@@ -151,7 +151,9 @@ class App(QtGui.QMainWindow):
                 styleMenu.addAction(item)
             self.set_stylesheet(stylesheet_default)
         self.toc = self.menuBar().addMenu('Table of &content')
-        self.stats_menu = self.menuBar().addMenu('Stats')
+        self.stats_menu = self.menuBar().addMenu('Statistics')
+        self.toc.setDisabled(True)
+        self.stats_menu.setDisabled(True)
 
         # Start the File Watcher Thread
         self.thread1 = WatcherThread(filename if filename else os.path.join(os.path.dirname(os.path.realpath(__file__)), 'README.md'))
@@ -210,6 +212,9 @@ class App(QtGui.QMainWindow):
             self.current_doc.scroll(0, ypos)
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
+        self.web_view.loadFinished.connect(self.stats_and_toc)
+
+    def stats_and_toc(self):
         # Statistics:
         u'''This is VERY big deal. For instance, how many words:
                 « un lien »
@@ -231,11 +236,17 @@ class App(QtGui.QMainWindow):
         lines = text.split('\n')
         text  = text.replace('\n', '')
         self.stats_menu.clear()
-        self.stats_menu.setTitle( str(len(words)) + ' &words')
-        self.stats_menu.addAction(str(len(text))  + ' characters')
-        self.stats_menu.addAction(str(len(lines)) + ' lines')
+        if len(text) > 0:
+            self.stats_menu.setDisabled(False)
+            self.stats_menu.setTitle( str(len(words)) + ' &words')
+            self.stats_menu.addAction(str(len(text))  + ' characters')
+            self.stats_menu.addAction(str(len(lines)) + ' lines')
+        else:
+            self.toc.setDisabled(True)
+            self.stats_menu.setTitle('Statistics')
         # TOC
         self.toc.clear()
+        self.toc.setDisabled(True)
         headers = []
         for i in xrange(1, 6):
             first = self.current_doc.findFirstElement('h%d'%i)
@@ -250,8 +261,12 @@ class App(QtGui.QMainWindow):
                 first = next
                 if 'H' in next.tagName(): headers.append(next)
         for n, h in enumerate(headers, start=1):
-            try:               indent = int(h.tagName()[1:])
-            except ValueError: break # cannot make it integer, means no headers
+            try:
+                indent = int(h.tagName()[1:])
+            except ValueError: # cannot make it integer, means no headers
+                break
+            else:
+                self.toc.setDisabled(False)
             vars(self)['toc_nav%d'%n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png'%indent),'%s%s'% ('  '*indent, h.toPlainText()), self)
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])

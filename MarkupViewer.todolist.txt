@@ -22,7 +22,6 @@ CSS:
   ☐ staff css files, e.g. keep the current theme but set all margins to zero [probably new menu View]
 
 WebView:
-  ☐ need to wait until page loaded before count words @bug @today
   ☐ zoom in/out
   ☐ tooltip for links
   ☐ scroll to changed part [seems tricky]
@@ -46,6 +45,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ need to wait until page loaded before count words @bug @project(WebView)
   ✔ drag&drop @project(WebView)
   ✔ improve Github-akin theme @project(CSS)
   ✔ new name [due to support other formats] @project(App [overall])
