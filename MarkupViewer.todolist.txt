@@ -22,6 +22,9 @@ CSS:
   ☐ staff css files, e.g. keep the current theme but set all margins to zero [probably new menu View]
 
 WebView:
+  ☐ generating toc is not reliable @bug
+    e.g. pandoc places <h> within <header> if title block is in md file
+    apparently, user may place <h> within other tags using inline html
   ☐ zoom in/out
   ☐ tooltip for links
   ☐ scroll to changed part [seems tricky]

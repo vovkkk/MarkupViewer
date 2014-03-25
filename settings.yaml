@@ -61,3 +61,7 @@ plugins_description: |
 style: default.css
 style_description: |
   filename of stylesheet to load initially
+
+inspector: false
+inspector_description: |
+  WebKit inspector, as in Chrome

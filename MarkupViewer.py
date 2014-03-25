@@ -1,22 +1,38 @@
 #!python2
 # coding: utf8
 
-import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml, subprocess
+import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml, subprocess, threading
 from PyQt4 import QtCore, QtGui, QtWebKit
 
 sys_enc = locale.getpreferredencoding()
 
 
 class Settings:
-    user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
-    app_source  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yaml')
-    settings_file = user_source if os.path.exists(user_source) else app_source
-    with io.open(settings_file, 'r', encoding='utf8') as f:
-        settings = yaml.safe_load(f)
+    def __init__(self):
+        user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
+        app_source  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yaml')
+        self.settings_file = user_source if os.path.exists(user_source) else app_source
+        self.reload_settings()
+        thread2 = threading.Thread(target=self.watch_settings)
+        thread2.setDaemon(True)
+        thread2.start()
 
     @classmethod
-    def get(self, key='', default_value=''):
-        return self.settings.get(key, default_value)
+    def get(cls, key='', default_value=''):
+        return cls().settings.get(key, default_value)
+
+    def reload_settings(self):
+        with io.open(self.settings_file, 'r', encoding='utf8') as f:
+            self.settings = yaml.safe_load(f)
+
+    def watch_settings(self):
+        last_modified = 0
+        while True:
+            current_modified = os.path.getmtime(self.settings_file)
+            if last_modified != current_modified:
+                last_modified = current_modified
+                self.reload_settings()
+            time.sleep(1)
 
 
 class SetuptheReader:
@@ -101,8 +117,8 @@ class App(QtGui.QMainWindow):
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
 
-        # Enable plugins (Flash, QiuckTime etc.)
-        QtWebKit.QWebSettings.globalSettings().setAttribute(3, Settings.get('plugins', False))
+        self.web_view.settings().setAttribute(3, Settings.get('plugins', False))
+        self.web_view.settings().setAttribute(7, Settings.get('inspector', False))
         # Open links in default browser
         # TODO: ¿ non-default browser @settings ?
         self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
@@ -125,7 +141,7 @@ class App(QtGui.QMainWindow):
 
         settingsAction = QtGui.QAction('Set&tings', self)
         settingsAction.setShortcut('Ctrl+t')
-        settingsAction.triggered[()].connect(lambda fn=Settings.settings_file: self.edit_file(fn))
+        settingsAction.triggered[()].connect(lambda fn=Settings().settings_file: self.edit_file(fn))
         fileMenu.addAction(settingsAction)
 
         # TODO: meta action for ESC key: hide search panel, then close the window
@@ -197,8 +213,8 @@ class App(QtGui.QMainWindow):
 
     def edit_file(self, fn):
         if not fn: fn = self.filename
-        args = Settings.get('editor', 'notepad.exe').split() + [fn]
-        subprocess.call(args)
+        args = Settings.get('editor', 'notepad').split() + [fn]
+        subprocess.Popen(args)
 
     def update(self, text):
         prev_doc    = self.web_view.page().currentFrame()
@@ -306,19 +322,18 @@ class WatcherThread(QtCore.QThread):
 
     def run(self):
         last_modified = 0
-        reader, writer = SetuptheReader._for(self.filename)
-        if writer == 'pandoc':
-            pandoc_path     = Settings.get('pandoc_path')
-            pandoc_markdown = Settings.get('pandoc_markdown')
-            pandoc_args     = Settings.get('pandoc_args')
-        if not writer:
-            # TODO: make a proper error message
-            return reader
         while True:
             current_modified = os.path.getmtime(self.filename)
             if last_modified != current_modified:
                 last_modified = current_modified
+                reader, writer = SetuptheReader._for(self.filename)
+                if not writer:
+                    # TODO: make a proper error message
+                    return reader
                 if writer == 'pandoc':
+                    pandoc_path     = Settings.get('pandoc_path')
+                    pandoc_markdown = Settings.get('pandoc_markdown')
+                    pandoc_args     = Settings.get('pandoc_args')
                     reader = pandoc_markdown if reader == 'markdown' else reader
                     args = ('%s --from=%s %s'%(pandoc_path, reader, pandoc_args)).split() + [self.filename]
                     p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
