@@ -22,9 +22,6 @@ CSS:
   ☐ staff css files, e.g. keep the current theme but set all margins to zero [probably new menu View]
 
 WebView:
-  ☐ generating toc is not reliable @bug
-    e.g. pandoc places <h> within <header> if title block is in md file
-    apparently, user may place <h> within other tags using inline html
   ☐ zoom in/out
   ☐ tooltip for links
   ☐ scroll to changed part [seems tricky]
@@ -48,6 +45,9 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ generating toc is not reliable @bug @project(WebView)
+    e.g. pandoc places <h> within <header> if title block is in md file
+    apparently, user may place <h> within other tags using inline html
   ✔ need to wait until page loaded before count words @bug @project(WebView)
   ✔ drag&drop @project(WebView)
   ✔ improve Github-akin theme @project(CSS)

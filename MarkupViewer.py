@@ -258,24 +258,20 @@ class App(QtGui.QMainWindow):
             self.stats_menu.addAction(str(len(text))  + ' characters')
             self.stats_menu.addAction(str(len(lines)) + ' lines')
         else:
-            self.toc.setDisabled(True)
+            self.stats_menu.setDisabled(True)
             self.stats_menu.setTitle('Statistics')
         # TOC
         self.toc.clear()
         self.toc.setDisabled(True)
         headers = []
-        for i in xrange(1, 6):
-            first = self.current_doc.findFirstElement('h%d'%i)
-            if len(first.tagName()) > 0:
-                headers.append(first)
-                break
-        while True:
-            next = first.nextSibling()
-            if len(next.tagName()) == 0:
-                break
-            else:
-                first = next
-                if 'H' in next.tagName(): headers.append(next)
+        def examineChildElements(parentElement):
+            element = parentElement.firstChild()
+            while not element.isNull():
+                if len(element.tagName()) == 2 and 'H' in element.tagName():
+                    headers.append(element)
+                examineChildElements(element)
+                element = element.nextSibling()
+        examineChildElements(self.current_doc.documentElement())
         for n, h in enumerate(headers, start=1):
             try:
                 indent = int(h.tagName()[1:])
