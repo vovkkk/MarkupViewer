@@ -229,6 +229,7 @@ class App(QtGui.QMainWindow):
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         self.web_view.loadFinished.connect(self.stats_and_toc)
+        self.web_view.page().linkHovered.connect(self.tooltip_link)
 
     def stats_and_toc(self):
         # Statistics:
@@ -282,6 +283,9 @@ class App(QtGui.QMainWindow):
             vars(self)['toc_nav%d'%n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png'%indent),'%s%s'% ('  '*indent, h.toPlainText()), self)
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
+
+    def tooltip_link(self, link):
+        self.setToolTip(link)
 
     def _scroll(self, header):
         self.current_doc.setScrollPosition(QtCore.QPoint(0, header.geometry().top()))

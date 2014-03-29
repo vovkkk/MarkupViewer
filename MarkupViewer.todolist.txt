@@ -23,7 +23,6 @@ CSS:
 
 WebView:
   ☐ zoom in/out
-  ☐ tooltip for links
   ☐ scroll to changed part [seems tricky]
   Selection:
     ☐ statistics
@@ -45,6 +44,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ tooltip for links @project(WebView)
   ✔ generating toc is not reliable @bug @project(WebView)
     e.g. pandoc places <h> within <header> if title block is in md file
     apparently, user may place <h> within other tags using inline html
