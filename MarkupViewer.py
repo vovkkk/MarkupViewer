@@ -268,7 +268,7 @@ class App(QtGui.QMainWindow):
         def examineChildElements(parentElement):
             element = parentElement.firstChild()
             while not element.isNull():
-                if len(element.tagName()) == 2 and 'H' in element.tagName():
+                if len(element.tagName()) == 2 and 'H' in element.tagName() and not 'HR' in element.tagName():
                     headers.append(element)
                 examineChildElements(element)
                 element = element.nextSibling()

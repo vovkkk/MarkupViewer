@@ -16,7 +16,7 @@ h4 {font-size: 1em; }
 h5 {font-size: 0.9em; }
 h6 {color: #777777; font-size: 0.9em; }
 p, blockquote, ol, dl, table {margin: 5px 0; }
-hr {border: 0 none; color: #cccccc; height: 4px; padding: 0; }
+hr {border: 0 none; background: #cccccc; height: 1px; padding: 0; margin: 1.5em 0;}
 body > h2:first-child {margin-top: 0; padding-top: 0; }
 body > h1:first-child {margin-top: 0; padding-top: 0; }
   body > h1:first-child + h2 {margin-top: 0; padding-top: 0; }
