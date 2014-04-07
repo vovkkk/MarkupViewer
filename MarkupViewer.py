@@ -247,8 +247,13 @@ class App(QtGui.QMainWindow):
         '''
         text  = unicode(self.current_doc.toPlainText())
         filtered_text = text.replace('\'', '').replace(u'’', '')
-        for c in ('"', u'…', '...', '!', '?', u'¡', u'¿', '/', '\\', '*', ',' , u'‘', u'”', u'“', u'„', u'«', u'»', u'—', '&', '\n'):
-            filtered_text = filtered_text.replace(c, ' ')
+        filtered_text_2 = ''
+        for c in filtered_text:
+            if c not in u'"…!?¡¿/\\*,‘”“„«»—&\n':
+                filtered_text_2 += c
+            else:
+                filtered_text_2 += ' '
+        filtered_text = filtered_text_2.replace('...', ' ')
         words = filtered_text.split()
         lines = text.split('\n')
         text  = text.replace('\n', '')
@@ -258,6 +263,14 @@ class App(QtGui.QMainWindow):
             self.stats_menu.setTitle( str(len(words)) + ' &words')
             self.stats_menu.addAction(str(len(text))  + ' characters')
             self.stats_menu.addAction(str(len(lines)) + ' lines')
+            unique_words = []
+            # lame; incorrect for any lang with grammar cases
+            for w in words:
+                if any(c for c in '(){}[]<>,.' if c in w):
+                    unique_words.append(''.join(c for c in w.lower() if c not in '(){}[]<>,.'))
+                else:
+                    unique_words.append(w.lower())
+            self.stats_menu.addAction(str(len(set(unique_words))) + ' unique words')
         else:
             self.stats_menu.setDisabled(True)
             self.stats_menu.setTitle('Statistics')
