@@ -135,9 +135,13 @@ class App(QtGui.QMainWindow):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
 
+        saveAction = QtGui.QAction('&Save', self)
+        saveAction.setShortcut('Ctrl+s')
+        saveAction.triggered.connect(self.save_html)
+        fileMenu.addAction(saveAction)
+
         editAction = QtGui.QAction('&Edit', self)
         editAction.setShortcut('Ctrl+e')
-        print filename
         editAction.triggered[()].connect(lambda fn='': self.edit_file(fn))
         fileMenu.addAction(editAction)
 
@@ -230,6 +234,25 @@ class App(QtGui.QMainWindow):
                         'It can be found in <pre>{0}</pre> or in <pre>{1}</pre> it is editable in any text editor.'
                         .format(*(os.path.normpath(s) for s in (Settings().user_source, Settings().app_source)))
                     )
+
+    def save_html(self):
+        formats = '*.html;;*;;*.pdf;;*.md;;*.txt%s' % (';;*.odt;;*.docx;;*.rtf;;*.epub;;*.epub3;;*.fb2' if Settings.get('via_pandoc', False) else '')
+        new_file = unicode(QtGui.QFileDialog.getSaveFileName(self, 'Save file', os.path.dirname(self.filename), formats))
+        ext = os.path.splitext(new_file)[1]
+        if ext == ('.html' or ''):
+            with io.open(new_file, 'w', encoding='utf8') as f:
+                f.writelines(unicode(self.current_doc.toHtml()))
+        elif ext == '.pdf':
+            QtGui.QMessageBox.critical(self, 'Yo', '<a href="http://i0.kym-cdn.com/photos/images/original/000/284/529/e65.gif">AiNT NOBODY GOT TiME FOR DAT</a>')
+        elif ext:
+            reader, _ = SetuptheReader._for(self.filename)
+            pandoc_path = Settings.get('pandoc_path')
+            args = ('%s -s --from=%s --to=%s'%(pandoc_path, reader, ext[1:])).split() + [self.filename, '--output=%s' % new_file]
+            try:    subprocess.Popen(args)
+            except: QtGui.QMessageBox.critical(self, 'Cannot find pandoc', 'Please, install <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>.<br>'
+                                               'If it is installed for sure, check if it is in PATH or change <code>pandoc_path</code> in settings.')
+        else:
+            return
 
     def update(self, text):
         prev_doc    = self.web_view.page().currentFrame()
