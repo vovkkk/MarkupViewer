@@ -1,7 +1,7 @@
 #!python2
 # coding: utf8
 
-import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml, subprocess, threading
+import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml, subprocess, threading, shutil
 from PyQt4 import QtCore, QtGui, QtWebKit
 
 sys_enc = locale.getpreferredencoding()
@@ -9,9 +9,9 @@ sys_enc = locale.getpreferredencoding()
 
 class Settings:
     def __init__(self):
-        user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
-        app_source  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yaml')
-        self.settings_file = user_source if os.path.exists(user_source) else app_source
+        self.user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
+        self.app_source  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yaml')
+        self.settings_file = self.user_source if os.path.exists(self.user_source) else self.app_source
         self.reload_settings()
         thread2 = threading.Thread(target=self.watch_settings)
         thread2.setDaemon(True)
@@ -33,6 +33,13 @@ class Settings:
                 last_modified = current_modified
                 self.reload_settings()
             time.sleep(1)
+
+    def edit_settings(self):
+        if not os.path.exists(self.user_source):
+            os.makedirs(os.path.dirname(self.user_source))
+            shutil.copy2(self.app_source, self.user_source)
+            self.settings_file = self.user_source
+        return self.settings_file
 
 
 class SetuptheReader:
@@ -141,7 +148,7 @@ class App(QtGui.QMainWindow):
 
         settingsAction = QtGui.QAction('Set&tings', self)
         settingsAction.setShortcut('Ctrl+t')
-        settingsAction.triggered[()].connect(lambda fn=Settings().settings_file: self.edit_file(fn))
+        settingsAction.triggered[()].connect(lambda: self.edit_file(Settings().edit_settings()))
         fileMenu.addAction(settingsAction)
 
         # TODO: meta action for ESC key: hide search panel, then close the window
@@ -214,7 +221,15 @@ class App(QtGui.QMainWindow):
     def edit_file(self, fn):
         if not fn: fn = self.filename
         args = Settings.get('editor', 'notepad').split() + [fn]
-        subprocess.Popen(args)
+        try:    subprocess.Popen(args)
+        except:
+            try:    subprocess.Popen(['notepad', fn])
+            except: QtGui.QMessageBox.critical(self,
+                        'MarkupViewer cannot find a text editor',
+                        'Change <code>editor</code> field in <code>settings.yaml</code> file.<br><br>'
+                        'It can be found in <pre>{0}</pre> or in <pre>{1}</pre> it is editable in any text editor.'
+                        .format(*(os.path.normpath(s) for s in (Settings().user_source, Settings().app_source)))
+                    )
 
     def update(self, text):
         prev_doc    = self.web_view.page().currentFrame()

@@ -9,10 +9,7 @@ File:
   ☐ open [ctrl+o]
   ☐ save [ctrl+s]
      as html, docx, other formats pandoc supports
-  ☐ settings/prefs [ctrl+p]
   ☐ print
-  ☐ edit [ctrl+e]
-    get editor from settings, fallback to notepad.exe
 
 CSS:
   ☐ real GitHub theme, pixel-perfect
@@ -44,6 +41,9 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ edit [ctrl+e] @project(File)
+    get editor from settings, fallback to notepad.exe
+  ✔ settings/prefs [ctrl+t] @project(File)
   ✔ tooltip for links @project(WebView)
   ✔ generating toc is not reliable @bug @project(WebView)
     e.g. pandoc places <h> within <header> if title block is in md file
