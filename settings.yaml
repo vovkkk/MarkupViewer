@@ -1,8 +1,9 @@
 via_pandoc: false
 via_pandoc_description: |
-  use pandoc or not; some formats can be viewed only via pandoc (docbook, opml,
-  gfm, latex);
-  make sure pandoc installed and presented in PATH
+  use pandoc (true) or not (false); some formats can be viewed only via pandoc
+  (docbook, opml, gfm, latex); it also required to be enabled for export to
+  certain formats (rtf, docx, odt etc.);
+  make sure pandoc is installed and presented in PATH
 
 pandoc_path: "pandoc"
 pandoc_path_description: |
@@ -56,7 +57,7 @@ show_full_path_description: |
 
 plugins: true
 plugins_description: |
-  enable Flash, QiuckTime etc. plugins, if they are available
+  enable Flash, QiuckTime etc. plugins, if they are available on your system
 
 style: default.css
 style_description: |

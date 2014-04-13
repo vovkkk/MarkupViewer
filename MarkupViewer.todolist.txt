@@ -1,14 +1,12 @@
-TODO (8)
-  ☐ .\MarkupViewer.py:57" remember/restore geometry in/from @settings"
-  ☐ .\MarkupViewer.py:75" ¿ non-default browser @settings ?"
-  ☐ .\MarkupViewer.py:79" hide menu?"
-  ☐ .\MarkupViewer.py:86" meta action for ESC key: hide search panel, then close the window"
-  ☐ .\MarkupViewer.py:141" statistics — decimals is a huge problem"
+TODO (5)
+  ☐ .\MarkupViewer.py:113" remember/restore geometry in/from @settings"
+  ☐ .\MarkupViewer.py:131" ¿ non-default browser @settings ?"
+  ☐ .\MarkupViewer.py:211" statistics — decimals is a huge problem"
+  ☐ .\MarkupViewer.py:291" hide menu?"
+  ☐ .\MarkupViewer.py:387" make a proper error message"
 
 File:
   ☐ open [ctrl+o]
-  ☐ save [ctrl+s]
-     as html, docx, other formats pandoc supports
   ☐ print
 
 CSS:
@@ -32,6 +30,7 @@ Search:
   ☐ make behavior of search more predictable [it sucks currently, tbh]
     e.g. if sth is found, user press highlight, press it again, search moves to the next result — it ought to stay where it was
   ☐ next/prev buttons [enter, shift+enter]
+    why keybindings in PyQt/Qt are so stupid? even Tkinter is much better on this matter
 
 App [overall]:
   ☐ make exe
@@ -41,6 +40,9 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ save [ctrl+s] @project(File)
+    as html, docx, other formats pandoc supports
+  ✔ meta action for ESC key: hide search panel, then close the window
   ✔ edit [ctrl+e] @project(File)
     get editor from settings, fallback to notepad.exe
   ✔ settings/prefs [ctrl+t] @project(File)

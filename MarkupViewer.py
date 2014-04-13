@@ -109,7 +109,6 @@ stylesheet_default = Settings.get('style')
 class App(QtGui.QMainWindow):
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
-
         # Configure the window
         # TODO: remember/restore geometry in/from @settings
         self.setGeometry(0, 488, 640, 532)
@@ -119,100 +118,25 @@ class App(QtGui.QMainWindow):
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
         except: pass
-
         # Add the WebView control
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
-
-        self.web_view.settings().setAttribute(3, Settings.get('plugins', False))
-        self.web_view.settings().setAttribute(7, Settings.get('inspector', False))
-        # Open links in default browser
-        # TODO: ¿ non-default browser @settings ?
-        self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
-
-        # Setup menu bar
-        # TODO: hide menu?
-        menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
-
-        saveAction = QtGui.QAction('&Save', self)
-        saveAction.setShortcut('Ctrl+s')
-        saveAction.triggered.connect(self.save_html)
-        fileMenu.addAction(saveAction)
-
-        editAction = QtGui.QAction('&Edit', self)
-        editAction.setShortcut('Ctrl+e')
-        editAction.triggered[()].connect(lambda fn='': self.edit_file(fn))
-        fileMenu.addAction(editAction)
-
-        searchAction = QtGui.QAction('&Find', self)
-        searchAction.setShortcut('Ctrl+f')
-        searchAction.triggered.connect(self.search_panel)
-        fileMenu.addAction(searchAction)
-
-        settingsAction = QtGui.QAction('Set&tings', self)
-        settingsAction.setShortcut('Ctrl+t')
-        settingsAction.triggered[()].connect(lambda: self.edit_file(Settings().edit_settings()))
-        fileMenu.addAction(settingsAction)
-
-        # TODO: meta action for ESC key: hide search panel, then close the window
-        exitAction = QtGui.QAction('E&xit', self)
-        exitAction.setShortcut('ESC')
-        exitAction.setStatusTip('Exit application')
-        exitAction.triggered.connect(QtGui.qApp.quit)
-        fileMenu.addAction(exitAction)
-
-        # Add style menu
-        if os.path.exists(stylesheet_dir):
-            default = ''
-            sheets = []
-            for f in os.listdir(stylesheet_dir):
-                if not f.endswith('.css'): continue
-                sheets.append(QtGui.QAction(f, self))
-                if len(sheets) < 10:
-                    sheets[-1].setShortcut('Ctrl+%d' % len(sheets))
-                sheets[-1].triggered.connect(
-                    lambda x, stylesheet=f: self.set_stylesheet(stylesheet))
-            styleMenu = menubar.addMenu('&Style')
-            for item in sheets:
-                styleMenu.addAction(item)
-            self.set_stylesheet(stylesheet_default)
-        self.toc = self.menuBar().addMenu('Table of &content')
-        self.stats_menu = self.menuBar().addMenu('Statistics')
-        self.toc.setDisabled(True)
-        self.stats_menu.setDisabled(True)
-
         # Start the File Watcher Thread
         self.thread1 = WatcherThread(filename if filename else os.path.join(os.path.dirname(os.path.realpath(__file__)), 'README.md'))
         self.connect(self.thread1, QtCore.SIGNAL('update(QString)'), self.update)
         self.thread1.start()
         self.filename = filename
         self.update('')
-
-        # create searchbar
-        self.search_bar = QtGui.QToolBar()
-        for v, t in (('close', u'×'), ('case', 'Aa'), ('wrap', u'∞'), ('high', u'💡'), ('next', u'↓'), ('prev', u'↑')):
-            vars(self)[v] = QtGui.QPushButton(t, self)
-        self.field = QtGui.QLineEdit()
-        def _toggle_btn(btn=''):
-            self.field.setFocus()
-            self.find(self.field.text(), btn)
-        for w in (self.close, self.case, self.wrap, self.high, self.field, self.next, self.prev):
-            self.search_bar.addWidget(w)
-            if type(w) == QtGui.QPushButton:
-                w.setFlat(True)
-                w.setFixedWidth(36)
-                if any(t for t in (self.case, self.wrap, self.high) if t is w):
-                    w.setCheckable(True)
-                    w.setFixedWidth(24)
-                    w.clicked.connect(_toggle_btn)
-                if any(t for t in (self.next, self.prev) if t is w):
-                    w.pressed[()].connect(lambda btn=w: _toggle_btn(btn))
-        self.field.textChanged.connect(self.find)
-        self.field.returnPressed.connect(_toggle_btn)
+        # Open links in default browser
+        # TODO: ¿ non-default browser @settings ?
+        self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
+        # drag&drop
         self.web_view.setAcceptDrops(True)
         setattr(self.web_view, 'dragEnterEvent', self.dragEnterEvent)
         setattr(self.web_view, 'dropEvent', self.dropEvent)
+        # ui
+        self.menu_bar()
+        self.search_panel()
 
     def dragEnterEvent(self, event):
         event.accept()
@@ -249,12 +173,15 @@ class App(QtGui.QMainWindow):
             pandoc_path = Settings.get('pandoc_path')
             args = ('%s -s --from=%s --to=%s'%(pandoc_path, reader, ext[1:])).split() + [self.filename, '--output=%s' % new_file]
             try:    subprocess.Popen(args)
-            except: QtGui.QMessageBox.critical(self, 'Cannot find pandoc', 'Please, install <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>.<br>'
-                                               'If it is installed for sure, check if it is in PATH or change <code>pandoc_path</code> in settings.')
+            except: QtGui.QMessageBox.critical(self, 'Cannot find pandoc',
+                        'Please, install <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>.<br>'
+                        'If it is installed for sure, check if it is in PATH or change <code>pandoc_path</code> in settings.')
         else:
             return
 
     def update(self, text):
+        self.web_view.settings().setAttribute(3, Settings.get('plugins', False))
+        self.web_view.settings().setAttribute(7, Settings.get('inspector', False))
         prev_doc    = self.web_view.page().currentFrame()
         prev_size   = prev_doc.contentsSize()
         prev_scroll = prev_doc.scrollPosition()
@@ -267,7 +194,7 @@ class App(QtGui.QMainWindow):
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         self.web_view.loadFinished.connect(self.stats_and_toc)
-        self.web_view.page().linkHovered.connect(self.tooltip_link)
+        self.web_view.page().linkHovered.connect(lambda link:self.setToolTip(link))
 
     def stats_and_toc(self):
         # Statistics:
@@ -335,9 +262,6 @@ class App(QtGui.QMainWindow):
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
 
-    def tooltip_link(self, link):
-        self.setToolTip(link)
-
     def _scroll(self, header):
         self.current_doc.setScrollPosition(QtCore.QPoint(0, header.geometry().top()))
 
@@ -348,8 +272,9 @@ class App(QtGui.QMainWindow):
         url = QtCore.QUrl(full_path)
         self.web_view.settings().setUserStyleSheetUrl(url)
 
-    def search_panel(self):
+    def show_search_panel(self):
         self.addToolBar(0x8, self.search_bar)
+        self.search_bar.show()
         self.field.setFocus()
         self.field.selectAll()
 
@@ -362,6 +287,85 @@ class App(QtGui.QMainWindow):
         p.findText('', p.FindFlags(8)) # clear prev highlight
         p.findText(text, back | wrap | case | high)
 
+    def menu_bar(self):
+        # TODO: hide menu?
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+
+        saveAction = QtGui.QAction(u'&Save as…', self)
+        saveAction.setShortcut('Ctrl+s')
+        saveAction.triggered.connect(self.save_html)
+        fileMenu.addAction(saveAction)
+
+        editAction = QtGui.QAction('&Edit the original', self)
+        editAction.setShortcut('Ctrl+e')
+        editAction.triggered[()].connect(lambda fn='': self.edit_file(fn))
+        fileMenu.addAction(editAction)
+
+        searchAction = QtGui.QAction(u'&Find on the page…', self)
+        searchAction.setShortcut('Ctrl+f')
+        searchAction.triggered.connect(self.show_search_panel)
+        fileMenu.addAction(searchAction)
+
+        settingsAction = QtGui.QAction('Set&tings', self)
+        settingsAction.setShortcut('Ctrl+t')
+        settingsAction.triggered[()].connect(lambda: self.edit_file(Settings().edit_settings()))
+        fileMenu.addAction(settingsAction)
+
+        exitAction = QtGui.QAction('E&xit', self)
+        exitAction.setShortcut('ESC')
+        exitAction.triggered.connect(self.escape)
+        fileMenu.addAction(exitAction)
+
+        # Add style menu
+        if os.path.exists(stylesheet_dir):
+            default = ''
+            sheets = []
+            for f in os.listdir(stylesheet_dir):
+                if not f.endswith('.css'): continue
+                sheets.append(QtGui.QAction(f, self))
+                if len(sheets) < 10:
+                    sheets[-1].setShortcut('Ctrl+%d' % len(sheets))
+                sheets[-1].triggered.connect(
+                    lambda x, stylesheet=f: self.set_stylesheet(stylesheet))
+            styleMenu = menubar.addMenu('&Style')
+            for item in sheets:
+                styleMenu.addAction(item)
+            self.set_stylesheet(stylesheet_default)
+
+        self.toc = self.menuBar().addMenu('Table of &content')
+        self.stats_menu = self.menuBar().addMenu('Statistics')
+        self.toc.setDisabled(True)
+        self.stats_menu.setDisabled(True)
+
+    def search_panel(self):
+        self.search_bar = QtGui.QToolBar()
+        for v, t in (('close', u'×'), ('case', 'Aa'), ('wrap', u'∞'), ('high', u'💡'), ('next', u'↓'), ('prev', u'↑')):
+            vars(self)[v] = QtGui.QPushButton(t, self)
+        self.field = QtGui.QLineEdit()
+        def _toggle_btn(btn=''):
+            self.field.setFocus()
+            self.find(self.field.text(), btn)
+        for w in (self.close, self.case, self.wrap, self.high, self.field, self.next, self.prev):
+            self.search_bar.addWidget(w)
+            if type(w) == QtGui.QPushButton:
+                w.setFlat(True)
+                w.setFixedWidth(36)
+                if any(t for t in (self.case, self.wrap, self.high) if t is w):
+                    w.setCheckable(True)
+                    w.setFixedWidth(24)
+                    w.clicked.connect(_toggle_btn)
+                if any(t for t in (self.next, self.prev) if t is w):
+                    w.pressed[()].connect(lambda btn=w: _toggle_btn(btn))
+        self.field.textChanged.connect(self.find)
+        self.field.returnPressed.connect(_toggle_btn)
+        self.close.pressed.connect(self.escape)
+
+    def escape(self):
+        if self.search_bar.isVisible():
+            self.search_bar.hide()
+        else:
+            QtGui.qApp.quit()
 
 class WatcherThread(QtCore.QThread):
     def __init__(self, filename):
