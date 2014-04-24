@@ -246,7 +246,7 @@ class App(QtGui.QMainWindow):
         def examineChildElements(parentElement):
             element = parentElement.firstChild()
             while not element.isNull():
-                if len(element.tagName()) == 2 and 'H' in element.tagName() and not 'HR' in element.tagName():
+                if element.tagName()[0] == 'H' and len(element.tagName()) == 2 and not 'HR' in element.tagName():
                     headers.append(element)
                 examineChildElements(element)
                 element = element.nextSibling()
@@ -255,6 +255,7 @@ class App(QtGui.QMainWindow):
             try:
                 indent = int(h.tagName()[1:])
             except ValueError: # cannot make it integer, means no headers
+                print(h.tagName())
                 break
             else:
                 self.toc.setDisabled(False)
