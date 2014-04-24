@@ -26,7 +26,6 @@ WebView:
   ☐ validate links
 
 Search:
-  ☐ find some monochrome icons [16×16px]
   ☐ make behavior of search more predictable [it sucks currently, tbh]
     e.g. if sth is found, user press highlight, press it again, search moves to the next result — it ought to stay where it was
   ☐ next/prev buttons [enter, shift+enter]
@@ -40,6 +39,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ find some monochrome icons [16×16px] @project(Search)
   ✔ save [ctrl+s] @project(File)
     as html, docx, other formats pandoc supports
   ✔ meta action for ESC key: hide search panel, then close the window

@@ -298,7 +298,7 @@ class App(QtGui.QMainWindow):
         saveAction.triggered.connect(self.save_html)
         fileMenu.addAction(saveAction)
 
-        editAction = QtGui.QAction('&Edit the original', self)
+        editAction = QtGui.QAction(QtGui.QIcon('icons/feather.png'), '&Edit the original', self)
         editAction.setShortcut('Ctrl+e')
         editAction.triggered[()].connect(lambda fn='': self.edit_file(fn))
         fileMenu.addAction(editAction)
@@ -341,8 +341,9 @@ class App(QtGui.QMainWindow):
 
     def search_panel(self):
         self.search_bar = QtGui.QToolBar()
-        for v, t in (('close', u'×'), ('case', 'Aa'), ('wrap', u'∞'), ('high', u'💡'), ('next', u'↓'), ('prev', u'↑')):
-            vars(self)[v] = QtGui.QPushButton(t, self)
+        for v, t in (('close', u'×'), ('case', u'Aa'), ('wrap', QtGui.QIcon('icons/around.png')), ('high', QtGui.QIcon('icons/bulb.png')), ('next', QtGui.QIcon('icons/down.png')), ('prev', QtGui.QIcon('icons/up.png'))):
+            if type(t) == unicode: vars(self)[v] = QtGui.QPushButton(t, self)
+            else:                  vars(self)[v] = QtGui.QPushButton(t, '', self)
         self.field = QtGui.QLineEdit()
         def _toggle_btn(btn=''):
             self.field.setFocus()

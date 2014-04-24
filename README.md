@@ -69,3 +69,9 @@ This program is free software; you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 markup.ico is based on [the markdown mark](https://github.com/dcurtis/markdown-mark) and dedicated to the public domain.
+
+### Font Awesome under [SIL](http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL)
+© 2012 Dave Gandy <http://fortawesome.github.com/Font-Awesome>
+
+### Entypo under [CC BY-SA](http://creativecommons.org/licenses/by-sa/2.0/)
+© 2012 Daniel Bruce <http://www.entypo.com>
