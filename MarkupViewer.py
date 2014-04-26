@@ -80,7 +80,7 @@ class SetuptheReader:
     def is_available(self, reader):
         via_pandoc = Settings.get('via_pandoc')
         if via_pandoc and (reader != 'creole'):
-            try:            subprocess.call(['pandoc', '-v'])
+            try:            subprocess.call(['pandoc', '-v'], shell=True)
             except OSError: via_pandoc = False
             else:           return (reader, 'pandoc')
         elif not via_pandoc or reader == 'creole':
@@ -393,7 +393,7 @@ class WatcherThread(QtCore.QThread):
                     pandoc_args     = Settings.get('pandoc_args')
                     reader = pandoc_markdown if reader == 'markdown' else reader
                     args = ('%s --from=%s %s'%(pandoc_path, reader, pandoc_args)).split() + [self.filename]
-                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
                     html = p.communicate()[0].decode('utf8')
                 else:
                     with io.open(self.filename, 'r', encoding='utf8') as f:
