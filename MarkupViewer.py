@@ -79,12 +79,13 @@ class SetuptheReader:
     @classmethod
     def is_available(self, reader):
         via_pandoc = Settings.get('via_pandoc')
-        if via_pandoc and (reader != 'creole'):
+        if via_pandoc and (reader != 'creole') and (reader != 'asciidoc'):
             try:            subprocess.call(['pandoc', '-v'], shell=True)
             except OSError: via_pandoc = False
             else:           return (reader, 'pandoc')
-        elif not via_pandoc or reader == 'creole':
+        elif not via_pandoc or reader == 'creole' or reader == 'asciidoc':
             writers = {
+                'asciidoc': ('asciidoc.asciidocapi', 'AsciiDocAPI'),
                 'creole'  : ('creole',        'creole2html'),
                 'markdown': ('markdown',      'markdown'),
                 'rst'     : ('docutils.core', 'publish_parts'),
@@ -400,6 +401,14 @@ class WatcherThread(QtCore.QThread):
                         text = f.read()
                     if reader == 'rst':
                         html = writer(text, writer_name='html', settings_overrides={'stylesheet_path': ''})['body']
+                    elif reader == 'asciidoc':
+                        import StringIO
+                        infile = StringIO.StringIO(text.encode('utf8'))
+                        outfile = StringIO.StringIO()
+                        asciidoc = writer(asciidoc_py=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'asciidoc/asciidoc.py'))
+                        asciidoc.options('--no-header-footer')
+                        asciidoc.execute(infile, outfile, backend='html5')
+                        html = outfile.getvalue().decode('utf8')
                     else:
                         html = writer(text)
 

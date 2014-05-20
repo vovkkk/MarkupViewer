@@ -8,6 +8,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * Updates when the file is changed
 * Stylesheet support
 * View various markup formats (asterisk determines formats require Pandoc to be installed):
+    * AsciiDoc
     * Creole
     * DocBook<b>\*</b>
     * Markdown, Pandoc-flavour<b>\*</b>, GitHub-flavour<b>\*</b>
@@ -25,10 +26,11 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
 * [PyYAML](https://pypi.python.org/pypi/PyYAML/3.10)
 * Optional dependencies (any single one of them will be enough for correct support of appropriate format(s); asterisk determines packages are required for support of all declared formats):
+    * asciidoc-8.6.9 (built-in)
+    * [docutils](https://pypi.python.org/pypi/docutils/0.11)
     * [python-creole](https://pypi.python.org/pypi/python-creole/1.1.1)<b>\*</b>
     * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)<b>\*</b>
     * [Markdown](http://pypi.python.org/pypi/Markdown)
-    * [docutils](https://pypi.python.org/pypi/docutils/0.11)
     * [textile](https://pypi.python.org/pypi/textile/)
 
 

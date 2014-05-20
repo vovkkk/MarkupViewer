@@ -25,10 +25,11 @@ pandoc_args_description: |
   cannot remove -t argument completely
 
 formats:
+  asciidoc: txt
   creole  : creole
   docbook : dbk xml
   latex   : tex
-  markdown: md mdown markdn markdown txt
+  markdown: md mdown markdn markdown
   opml    : opml
   rst     : rst
   textile : textile
