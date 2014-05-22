@@ -49,8 +49,6 @@ editor_description: |
   full path;
   fallback to notepad.exe
 
-geometry: [0, 488, 640, 532]
-
 show_full_path: true
 show_full_path_description: |
   full path to file in window title, if false then just a filename
