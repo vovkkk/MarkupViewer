@@ -1,9 +1,9 @@
 TODO (5)
-  ☐ .\MarkupViewer.py:113" remember/restore geometry in/from @settings"
-  ☐ .\MarkupViewer.py:131" ¿ non-default browser @settings ?"
-  ☐ .\MarkupViewer.py:211" statistics — decimals is a huge problem"
-  ☐ .\MarkupViewer.py:291" hide menu?"
-  ☐ .\MarkupViewer.py:387" make a proper error message"
+  ☐ .\MarkupViewer.py:114" add commandline parameter to force specific geometry"
+  ☐ .\MarkupViewer.py:134" ¿ non-default browser @settings ?"
+  ☐ .\MarkupViewer.py:214" statistics — decimals is a huge problem"
+  ☐ .\MarkupViewer.py:295" hide menu?"
+  ☐ .\MarkupViewer.py:398" make a proper error message"
 
 File:
   ☐ open [ctrl+o]
@@ -39,6 +39,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ remember/restore geometry in/from @settings
   ✔ find some monochrome icons [16×16px] @project(Search)
   ✔ save [ctrl+s] @project(File)
     as html, docx, other formats pandoc supports

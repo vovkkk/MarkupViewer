@@ -43,11 +43,11 @@ class Settings:
 
 
 class SetuptheReader:
-    """a knot of methods related to readers: which one need to be used, is it available etc.
+    '''a knot of methods related to readers: which one need to be used, is it available etc.
     basic usecase:
         reader, writer = SetuptheReader._for(filename)
         html = writer(unicode_object)
-    """
+    '''
     readers = Settings.get('formats')
 
     @classmethod
@@ -111,8 +111,10 @@ class App(QtGui.QMainWindow):
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
         # Configure the window
-        # TODO: remember/restore geometry in/from @settings
-        self.setGeometry(0, 488, 640, 532)
+        # TODO: add commandline parameter to force specific geometry
+        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
+        self.resize(qsettings.value('size', QtCore.QSize(800, 600)).toSize())
+        self.move(qsettings.value('pos',  QtCore.QPoint(50, 50)).toPoint())
         self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(filename) if Settings.get('show_full_path', True) else os.path.basename(filename), sys_enc))
         self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
         try: # separate icon in the Windows dock
@@ -368,7 +370,14 @@ class App(QtGui.QMainWindow):
         if self.search_bar.isVisible():
             self.search_bar.hide()
         else:
-            QtGui.qApp.quit()
+            self.closeEvent(QtGui.QCloseEvent)
+
+    def closeEvent(self, QCloseEvent):
+        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
+        qsettings.setValue('size', self.size())
+        qsettings.setValue('pos', self.pos())
+        QtGui.qApp.quit()
+
 
 class WatcherThread(QtCore.QThread):
     def __init__(self, filename):
