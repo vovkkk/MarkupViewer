@@ -13,9 +13,6 @@ class Settings:
         self.app_source  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yaml')
         self.settings_file = self.user_source if os.path.exists(self.user_source) else self.app_source
         self.reload_settings()
-        thread2 = threading.Thread(target=self.watch_settings)
-        thread2.setDaemon(True)
-        thread2.start()
 
     @classmethod
     def get(cls, key='', default_value=''):
@@ -198,6 +195,11 @@ class App(QtGui.QMainWindow):
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         self.web_view.loadFinished.connect(self.stats_and_toc)
         self.web_view.page().linkHovered.connect(lambda link:self.setToolTip(link))
+        # supposed to be 3 threads: main, convertion, settings-reload
+        # IDs are supposed to be the same on each update
+        for threadId, stack in sys._current_frames().items():
+            print "ThreadID: %s" % threadId
+        print '====================\tfinish update()'
 
     def stats_and_toc(self):
         # Statistics:
@@ -433,6 +435,9 @@ def main():
     #         u'• <a href="https://pythonhosted.org/Markdown/install.html">Markdown</a><br>'
     #         u'• <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>')
     if True:
+        thread2 = threading.Thread(target=Settings().watch_settings)
+        thread2.setDaemon(True)
+        thread2.start()
         if len(sys.argv) != 2: test = App()
         else:                  test = App(filename=sys.argv[1])
         test.show()
