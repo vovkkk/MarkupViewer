@@ -15,8 +15,10 @@ CSS:
     JODYHiGHROLLER theme — oh, I gotta make it ☺
     or maybe… DA THEME FO REAL PLAYAZ
   ☐ staff css files, e.g. keep the current theme but set all margins to zero [probably new menu View]
+  ☐ scrollbar @win8
 
 WebView:
+  ☐ reload → update [f5]
   ☐ zoom in/out
   ☐ scroll to changed part [seems tricky]
   Selection:
@@ -32,6 +34,8 @@ Search:
     why keybindings in PyQt/Qt are so stupid? even Tkinter is much better on this matter
 
 App [overall]:
+  ☐ toc in sidebar [optional]
+  ☐ ¿recently used docs?
   ☐ make exe
   ☐ installer
   ☐ ¿ github pages ?

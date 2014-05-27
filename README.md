@@ -26,10 +26,10 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
 * [PyYAML](https://pypi.python.org/pypi/PyYAML/3.10)
 * Optional dependencies (any single one of them will be enough for correct support of appropriate format(s); asterisk determines packages are required for support of all declared formats):
-    * asciidoc-8.6.9 (built-in)
-    * [docutils](https://pypi.python.org/pypi/docutils/0.11)
+    * [asciidoc](http://sourceforge.net/projects/asciidoc/)<b>\*</b> (see `.\asciidoc\README.txt` for details)
     * [python-creole](https://pypi.python.org/pypi/python-creole/1.1.1)<b>\*</b>
     * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)<b>\*</b>
+    * [docutils](https://pypi.python.org/pypi/docutils/0.11)
     * [Markdown](http://pypi.python.org/pypi/Markdown)
     * [textile](https://pypi.python.org/pypi/textile/)
 

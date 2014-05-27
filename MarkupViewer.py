@@ -118,15 +118,17 @@ class App(QtGui.QMainWindow):
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
         except: pass
+        # if sys.getwindowsversion()[2] >= 9200:
+        #     QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('WindowsXP'))
         # Add the WebView control
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
         # Start the File Watcher Thread
         self.thread1 = WatcherThread(filename if filename else os.path.join(os.path.dirname(os.path.realpath(__file__)), 'README.md'))
-        self.connect(self.thread1, QtCore.SIGNAL('update(QString)'), self.update)
+        self.connect(self.thread1, QtCore.SIGNAL('update(QString,QString)'), self.update)
         self.thread1.start()
         self.filename = filename
-        self.update('')
+        self.update('','')
         # Open links in default browser
         # TODO: ¿ non-default browser @settings ?
         self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
@@ -179,7 +181,7 @@ class App(QtGui.QMainWindow):
         else:
             return
 
-    def update(self, text):
+    def update(self, text, warn):
         self.web_view.settings().setAttribute(3, Settings.get('plugins', False))
         self.web_view.settings().setAttribute(7, Settings.get('inspector', False))
         prev_doc    = self.web_view.page().currentFrame()
@@ -197,9 +199,11 @@ class App(QtGui.QMainWindow):
         self.web_view.page().linkHovered.connect(lambda link:self.setToolTip(link))
         # supposed to be 3 threads: main, convertion, settings-reload
         # IDs are supposed to be the same on each update
-        for threadId, stack in sys._current_frames().items():
+        for threadId, _ in sys._current_frames().items():
             print "ThreadID: %s" % threadId
         print '====================\tfinish update()'
+        if warn:
+            QtGui.QMessageBox.warning(self, 'Converter says', warn)
 
     def stats_and_toc(self):
         # Statistics:
@@ -392,6 +396,7 @@ class WatcherThread(QtCore.QThread):
     def run(self):
         last_modified = 0
         while True:
+            warn = ''
             current_modified = os.path.getmtime(self.filename)
             if last_modified != current_modified:
                 last_modified = current_modified
@@ -405,8 +410,9 @@ class WatcherThread(QtCore.QThread):
                     pandoc_args     = Settings.get('pandoc_args')
                     reader = pandoc_markdown if reader == 'markdown' else reader
                     args = ('%s --from=%s %s'%(pandoc_path, reader, pandoc_args)).split() + [self.filename]
-                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-                    html = p.communicate()[0].decode('utf8')
+                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    # print p.communicate()[1].decode('utf8')
+                    html, warn = (m.decode('utf8') for m in p.communicate())
                 else:
                     with io.open(self.filename, 'r', encoding='utf8') as f:
                         text = f.read()
@@ -423,7 +429,7 @@ class WatcherThread(QtCore.QThread):
                     else:
                         html = writer(text)
 
-                self.emit(QtCore.SIGNAL('update(QString)'), html)
+                self.emit(QtCore.SIGNAL('update(QString,QString)'), html, warn)
             time.sleep(0.5)
 
 
