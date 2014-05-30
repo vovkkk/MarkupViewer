@@ -184,28 +184,53 @@ class App(QtGui.QMainWindow):
     def update(self, text, warn):
         self.web_view.settings().setAttribute(3, Settings.get('plugins', False))
         self.web_view.settings().setAttribute(7, Settings.get('inspector', False))
-        prev_doc    = self.web_view.page().currentFrame()
-        prev_size   = prev_doc.contentsSize()
-        prev_scroll = prev_doc.scrollPosition()
+        self.prev_ls = []
+        self.examine_doc_elements(self.web_view.page().currentFrame().documentElement(), self.prev_ls)
+        # actual update
         self.web_view.setHtml(text, baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
-        self.current_doc  = self.web_view.page().currentFrame()
-        current_size = self.current_doc.contentsSize()
-        if prev_scroll.y() > 0: # self.current_doc.scrollPosition() is always 0
-            ypos = prev_scroll.y() - (prev_size.height() - current_size.height())
-            self.current_doc.scroll(0, ypos)
+        self.web_view.loadFinished.connect(self.stats_and_toc)
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
-        self.web_view.loadFinished.connect(self.stats_and_toc)
         self.web_view.page().linkHovered.connect(lambda link:self.setToolTip(link))
         # supposed to be 3 threads: main, convertion, settings-reload
         # IDs are supposed to be the same on each update
-        for threadId, _ in sys._current_frames().items():
-            print "ThreadID: %s" % threadId
-        print '====================\tfinish update()'
+        # for threadId, _ in sys._current_frames().items():
+        #     print "ThreadID: %s" % threadId
+        # print '====================\tfinish update()'
         if warn:
             QtGui.QMessageBox.warning(self, 'Converter says', warn)
 
+    def examine_doc_elements(self, parentElement, tree):
+        element = parentElement.firstChild()
+        while not element.isNull():
+            # print element.tagName()
+            # FIXME: actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)
+            if not 'BODY' in element.tagName():
+                tree.append([element, element.toPlainText()])
+            self.examine_doc_elements(element, tree)
+            element = element.nextSibling()
+
     def stats_and_toc(self):
+        # scroll and setup elements’ tree for toc
+        self.current_doc  = self.web_view.page().currentFrame()
+        current_ls = []
+        self.examine_doc_elements(self.current_doc.documentElement(), current_ls)
+        # import pprint
+        # pprint.pprint( self.prev_ls)
+        # print '='*20
+        # pprint.pprint( current_ls)
+        for i, e in enumerate(current_ls):
+            # print e[0].tagName()
+            if e[0].tagName() == self.prev_ls[i][0].tagName():
+                if e[1] != self.prev_ls[i][1]: # if tag is the same, compare contents
+                    # print 'ya', e[0].geometry().top(), e[0].tagName(), unicode(e[1]).encode('utf8', 'replace')
+                    self._scroll(e[0])
+                    break
+            else:
+                # print 'na', e[0].geometry().top(), unicode(e[1]).encode('utf8', 'replace')
+                self._scroll(e[0])
+                break
+        # print '='*20
         # Statistics:
         u'''This is VERY big deal. For instance, how many words:
                 « un lien »
@@ -219,7 +244,7 @@ class App(QtGui.QMainWindow):
             still, more accurate than many others.
             TODO: statistics — decimals is a huge problem
         '''
-        text  = unicode(self.current_doc.toPlainText())
+        text = unicode(self.current_doc.toPlainText())
         filtered_text = text.replace('\'', '').replace(u'’', '')
         filtered_text_2 = ''
         for c in filtered_text:
@@ -252,14 +277,9 @@ class App(QtGui.QMainWindow):
         self.toc.clear()
         self.toc.setDisabled(True)
         headers = []
-        def examineChildElements(parentElement):
-            element = parentElement.firstChild()
-            while not element.isNull():
-                if element.tagName()[0] == 'H' and len(element.tagName()) == 2 and not 'HR' in element.tagName():
-                    headers.append(element)
-                examineChildElements(element)
-                element = element.nextSibling()
-        examineChildElements(self.current_doc.documentElement())
+        for element, _ in current_ls:
+            if element.tagName()[0] == 'H' and len(element.tagName()) == 2 and not 'HR' in element.tagName():
+                headers.append(element)
         for n, h in enumerate(headers, start=1):
             try:
                 indent = int(h.tagName()[1:])
@@ -272,8 +292,8 @@ class App(QtGui.QMainWindow):
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
 
-    def _scroll(self, header):
-        self.current_doc.setScrollPosition(QtCore.QPoint(0, header.geometry().top()))
+    def _scroll(self, element):
+        self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top()))
 
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??
@@ -316,6 +336,11 @@ class App(QtGui.QMainWindow):
         searchAction.setShortcut('Ctrl+f')
         searchAction.triggered.connect(self.show_search_panel)
         fileMenu.addAction(searchAction)
+
+        printAction = QtGui.QAction('&Print', self)
+        printAction.setShortcut('Ctrl+p')
+        printAction.triggered.connect(self.print_doc)
+        fileMenu.addAction(printAction)
 
         settingsAction = QtGui.QAction('Set&tings', self)
         settingsAction.setShortcut('Ctrl+t')
@@ -371,6 +396,11 @@ class App(QtGui.QMainWindow):
         self.field.textChanged.connect(self.find)
         self.field.returnPressed.connect(_toggle_btn)
         self.close.pressed.connect(self.escape)
+
+    def print_doc(self):
+        dialog = QtGui.QPrintPreviewDialog()
+        dialog.paintRequested.connect(self.web_view.print_)
+        dialog.exec_()
 
     def escape(self):
         if self.search_bar.isVisible():

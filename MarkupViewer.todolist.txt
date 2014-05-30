@@ -1,13 +1,16 @@
+FIXME (1)
+  ☐ .\MarkupViewer.py:207" actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)"
 TODO (5)
-  ☐ .\MarkupViewer.py:114" add commandline parameter to force specific geometry"
-  ☐ .\MarkupViewer.py:134" ¿ non-default browser @settings ?"
-  ☐ .\MarkupViewer.py:214" statistics — decimals is a huge problem"
-  ☐ .\MarkupViewer.py:295" hide menu?"
-  ☐ .\MarkupViewer.py:398" make a proper error message"
+  ☐ .\MarkupViewer.py:111" add commandline parameter to force specific geometry"
+  ☐ .\MarkupViewer.py:133" ¿ non-default browser @settings ?"
+  ☐ .\MarkupViewer.py:246" statistics — decimals is a huge problem"
+  ☐ .\MarkupViewer.py:322" hide menu?"
+  ☐ .\MarkupViewer.py:436" make a proper error message"
 
 File:
   ☐ open [ctrl+o]
-  ☐ print
+  ☐ do something with print [pyqt’s default is awful]
+    wxPython has nice one, but it should be better — think Firefox
 
 CSS:
   ☐ real GitHub theme, pixel-perfect
@@ -20,7 +23,6 @@ CSS:
 WebView:
   ☐ reload → update [f5]
   ☐ zoom in/out
-  ☐ scroll to changed part [seems tricky]
   Selection:
     ☐ statistics
     ☐ copy as html/rtf
@@ -43,6 +45,8 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ print [ctrl+p] @project(File)
+  ✔ scroll to changed part [seems tricky] @project(WebView)
   ✔ remember/restore geometry in/from @settings
   ✔ find some monochrome icons [16×16px] @project(Search)
   ✔ save [ctrl+s] @project(File)
