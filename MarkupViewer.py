@@ -77,7 +77,7 @@ class App(QtGui.QMainWindow):
             QtGui.QMessageBox.critical(self, 'Yo', '<a href="http://i0.kym-cdn.com/photos/images/original/000/284/529/e65.gif">AiNT NOBODY GOT TiME FOR DAT</a>')
         elif ext:
             reader, _ = SetuptheReader._for(self.filename)
-            pandoc_path = Settings.get('pandoc_path')
+            pandoc_path = Settings.get('pandoc_path', 'pandoc')
             args = ('%s -s --from=%s --to=%s'%(pandoc_path, reader, ext[1:])).split() + [self.filename, '--output=%s' % new_file]
             try:    subprocess.Popen(args)
             except: QtGui.QMessageBox.critical(self, 'Cannot find pandoc',
@@ -253,10 +253,9 @@ class App(QtGui.QMainWindow):
             {'icon': '', 'label': u'&Find on the page…', 'keys': 'Ctrl+f', 'func': self.show_search_panel},
             {'icon': '', 'label': u'&Print',             'keys': 'Ctrl+p', 'func': self.print_doc},
             {'icon': '', 'label': u'Set&tings',          'keys': 'Ctrl+t', 'func': lambda: self.edit_file(Settings().edit_settings())},
-            {'icon': '', 'label': 'E&xit',               'keys': 'ESC',    'func': self.escape}
+            {'icon': '', 'label': u'E&xit',              'keys': 'ESC',    'func': self.escape}
             ):
-                if d['icon']: a = QtGui.QAction(QtGui.QIcon(d['icon']), d['label'], self)
-                else:         a = QtGui.QAction(d['label'], self)
+                a = QtGui.QAction(QtGui.QIcon(d['icon']), d['label'], self)
                 a.setShortcut(d['keys'])
                 a.triggered.connect(d['func'])
                 fileMenu.addAction(a)
@@ -275,7 +274,7 @@ class App(QtGui.QMainWindow):
             styleMenu = menubar.addMenu('&Style')
             for item in sheets:
                 styleMenu.addAction(item)
-            self.set_stylesheet(Settings.get('style'))
+            self.set_stylesheet(Settings.get('style', 'default.css'))
 
         self.toc = self.menuBar().addMenu('Table of &content')
         self.stats_menu = self.menuBar().addMenu('Statistics')
@@ -344,11 +343,11 @@ class WatcherThread(QtCore.QThread):
                     # TODO: make a proper error message
                     return reader
                 if writer == 'pandoc':
-                    pandoc_path     = Settings.get('pandoc_path')
-                    pandoc_markdown = Settings.get('pandoc_markdown')
-                    pandoc_args     = Settings.get('pandoc_args')
-                    reader = pandoc_markdown if reader == 'markdown' else reader
-                    args = ('%s --from=%s %s'%(pandoc_path, reader, pandoc_args)).split() + [self.filename]
+                    path     = Settings.get('pandoc_path', 'pandoc')
+                    markdown = Settings.get('pandoc_markdown', 'markdown')
+                    args     = Settings.get('pandoc_args', '')
+                    reader = markdown if reader == 'markdown' else reader
+                    args = [path] + ('--from=%s %s' % (reader, args)).split() + [self.filename]
                     p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     # print p.communicate()[1].decode('utf8')
                     html, warn = (m.decode('utf8') for m in p.communicate())
@@ -380,7 +379,7 @@ class Settings:
         self.reload_settings()
 
     @classmethod
-    def get(cls, key='', default_value=''):
+    def get(cls, key, default_value):
         return cls().settings.get(key, default_value)
 
     def reload_settings(self):
@@ -410,7 +409,7 @@ class SetuptheReader:
         reader, writer = SetuptheReader._for(filename)
         html = writer(unicode_object)
     '''
-    readers = Settings.get('formats')
+    readers = Settings.get('formats', {'markdown': 'md'})
 
     @classmethod
     def _for(self, filename):
@@ -435,12 +434,12 @@ class SetuptheReader:
         if file_ext in formats.keys():
             reader = formats[file_ext]
         else:
-            reader = Settings.get('no_extension')
+            reader = Settings.get('no_extension', 'markdown')
         return reader
 
     @classmethod
     def is_available(self, reader):
-        via_pandoc = Settings.get('via_pandoc')
+        via_pandoc = Settings.get('via_pandoc', False)
         if via_pandoc and (reader != 'creole') and (reader != 'asciidoc'):
             try:            subprocess.call(['pandoc', '-v'], shell=True)
             except OSError: via_pandoc = False
