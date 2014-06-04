@@ -37,6 +37,7 @@ Search:
 
 App [overall]:
   ☐ toc in sidebar [optional]
+  ☐ remember/restore state of each widget
   ☐ ¿recently used docs?
   ☐ make exe
   ☐ installer

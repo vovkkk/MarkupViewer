@@ -101,7 +101,9 @@ body{font-size:16px;}
   h2, h3 { page-break-after: avoid; }
 }
 
-.markupviewerautoscroll{
-  -webkit-transition: background-color 2s;
-  background-color: rgba(209, 232, 255, 0.8);
+.markupviewerautoscrollstart{
+  -webkit-transition: background-color 1s; background-color: rgba(209, 232, 255, 0.8);
+}
+.markupviewerautoscrollend{
+  -webkit-transition: background-color 1s; background-color: transparent;
 }
