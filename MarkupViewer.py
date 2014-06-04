@@ -304,7 +304,10 @@ class App(QtGui.QMainWindow):
             self.toc.addAction(vars(self)['toc_nav%d'%n])
 
     def _scroll(self, element):
-        self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top()))
+        margin = (int(element.styleProperty('margin-top', 2)[:~1]) or
+                  int(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1]) or
+                  0)
+        self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top() - margin))
         element.addClass('markupviewerautoscroll')
         QtCore.QTimer.singleShot(2000, lambda: element.removeClass('markupviewerautoscroll'))
 
