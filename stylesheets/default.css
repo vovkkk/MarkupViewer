@@ -100,3 +100,8 @@ body{font-size:16px;}
   p, h2, h3 { orphans: 3; widows: 3; }
   h2, h3 { page-break-after: avoid; }
 }
+
+.markupviewerautoscroll{
+  -webkit-transition: background-color 2s;
+  background-color: rgba(209, 232, 255, 0.8);
+}

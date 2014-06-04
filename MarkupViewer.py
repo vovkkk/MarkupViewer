@@ -205,29 +205,40 @@ class App(QtGui.QMainWindow):
         while not element.isNull():
             # print element.tagName()
             # FIXME: actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)
-            if not 'BODY' in element.tagName():
+            # besides, parent may have content AND children, e.g. li>ul>li
+            if not any(t for t in ('BODY', 'HEAD', 'META', 'TITLE', 'STYLE') if t == element.tagName()):
                 tree.append([element, element.toPlainText()])
             self.examine_doc_elements(element, tree)
             element = element.nextSibling()
 
     def stats_and_toc(self):
         # scroll and setup elements’ tree for toc
-        self.current_doc  = self.web_view.page().currentFrame()
+        self.current_doc = self.web_view.page().currentFrame()
         current_ls = []
         self.examine_doc_elements(self.current_doc.documentElement(), current_ls)
         # import pprint
-        # pprint.pprint( self.prev_ls)
+        # pprint.pprint([(a.tagName(), b) for a,  b in self.prev_ls])
         # print '='*20
-        # pprint.pprint( current_ls)
+        # pprint.pprint([(a.tagName(), b) for a,  b in  current_ls])
+        prev_len, curr_len, go = len(self.prev_ls), len(current_ls), 0
         for i, e in enumerate(current_ls):
             # print e[0].tagName()
-            if e[0].tagName() == self.prev_ls[i][0].tagName():
-                if e[1] != self.prev_ls[i][1]: # if tag is the same, compare contents
+            if curr_len > prev_len and i + 1 > prev_len:
+                # some block was appended to doc
+                go = 1
+            elif curr_len < prev_len and  i + 1 == curr_len:
+                # some block was removed in the end of doc
+                go = 1
+            elif e[0].tagName() == self.prev_ls[i][0].tagName():
+                # block’s content was changed
+                if e[1] != self.prev_ls[i][1]:
                     # print 'ya', e[0].geometry().top(), e[0].tagName(), unicode(e[1]).encode('utf8', 'replace')
-                    self._scroll(e[0])
-                    break
-            else:
+                    go = 1
+            else: # block in the middle of doc was changed (<p> → <h1>)
                 # print 'na', e[0].geometry().top(), unicode(e[1]).encode('utf8', 'replace')
+                # print e[0].tagName(), self.prev_ls[i][0].tagName()
+                go = 1
+            if go:
                 self._scroll(e[0])
                 break
         # print '='*20
@@ -294,6 +305,8 @@ class App(QtGui.QMainWindow):
 
     def _scroll(self, element):
         self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top()))
+        element.addClass('markupviewerautoscroll')
+        QtCore.QTimer.singleShot(2000, lambda: element.removeClass('markupviewerautoscroll'))
 
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??

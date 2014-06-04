@@ -76,3 +76,8 @@ body{font-size:12pt;}
 @media only screen and (min-width: 768px) {
 body{font-size:14pt;}
 }
+
+.markupviewerautoscroll{
+  -webkit-transition: background-color 2s;
+  background-color: rgba(209, 232, 255, 0.8);
+}
