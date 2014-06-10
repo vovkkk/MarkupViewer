@@ -34,6 +34,7 @@ class App(QtGui.QMainWindow):
         self.connect(self.thread1, QtCore.SIGNAL('update(QString,QString)'), self.update)
         self.thread1.start()
         self.update('','')
+        self.web_view.loadFinished.connect(self.after_update)
         # Open links in default browser
         # TODO: ¿ non-default browser @settings ?
         self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
@@ -89,11 +90,14 @@ class App(QtGui.QMainWindow):
     def update(self, text, warn):
         self.web_view.settings().setAttribute(3, Settings.get('plugins', False))
         self.web_view.settings().setAttribute(7, Settings.get('inspector', False))
-        self.prev_ls = []
-        self.examine_doc_elements(self.web_view.page().currentFrame().documentElement(), self.prev_ls)
+        # prepare for auto scroll
+        prev_doc         = self.web_view.page().currentFrame()
+        self.prev_size   = prev_doc.contentsSize()
+        self.prev_scroll = prev_doc.scrollPosition()
+        self.prev_ls     = []
+        self.examine_doc_elements(prev_doc.documentElement(), self.prev_ls)
         # actual update
         self.web_view.setHtml(text, baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
-        self.web_view.loadFinished.connect(self.after_update)
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         self.web_view.page().linkHovered.connect(lambda link:self.setToolTip(link))
@@ -144,6 +148,9 @@ class App(QtGui.QMainWindow):
             if go:
                 self._scroll(element)
                 break
+            if not go and i + 1 == curr_len:
+                # no actual changes, keep scrollbar in place
+                self._scroll()
         # print '='*20
         self.generate_toc(current_ls)
         self.calc_stats()
@@ -210,15 +217,21 @@ class App(QtGui.QMainWindow):
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
 
-    def _scroll(self, element):
-        margin = (int(element.styleProperty('margin-top', 2)[:~1]) or
-                  int(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1]) or
-                  0)
-        self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top() - margin))
-        element.addClass('markupviewerautoscrollstart')
-        QtCore.QTimer.singleShot(1100, lambda: element.addClass('markupviewerautoscrollend'))
-        QtCore.QTimer.singleShot(1200, lambda: element.removeClass('markupviewerautoscrollstart'))
-        QtCore.QTimer.singleShot(2300, lambda: element.removeClass('markupviewerautoscrollend'))
+    def _scroll(self, element=0):
+        if element:
+            margin = (int(element.styleProperty('margin-top', 2)[:~1]) or
+                      int(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1]) or
+                      0)
+            self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top() - margin))
+            element.addClass('markupviewerautoscrollstart')
+            QtCore.QTimer.singleShot(1100, lambda: element.addClass('markupviewerautoscrollend'))
+            QtCore.QTimer.singleShot(1200, lambda: element.removeClass('markupviewerautoscrollstart'))
+            QtCore.QTimer.singleShot(2300, lambda: element.removeClass('markupviewerautoscrollend'))
+        else:
+            current_size = self.current_doc.contentsSize()
+            ypos = self.prev_scroll.y() - (self.prev_size.height() - current_size.height())
+            # print '%s = %s - (%s - %s)' % (ypos, self.prev_scroll.y(), self.prev_size.height(), current_size.height())
+            self.current_doc.scroll(0, ypos)
 
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??
@@ -343,11 +356,10 @@ class WatcherThread(QtCore.QThread):
                     # TODO: make a proper error message
                     return reader
                 if writer == 'pandoc':
-                    path     = Settings.get('pandoc_path', 'pandoc')
-                    markdown = Settings.get('pandoc_markdown', 'markdown')
-                    args     = Settings.get('pandoc_args', '')
-                    reader = markdown if reader == 'markdown' else reader
-                    args = [path] + ('--from=%s %s' % (reader, args)).split() + [self.filename]
+                    path    = Settings.get('pandoc_path', 'pandoc')
+                    pd_args = Settings.get('pandoc_args', '')
+                    reader  = Settings.get('pandoc_markdown', 'markdown') if reader == 'markdown' else reader
+                    args = [path] + ('--from=%s %s' % (reader, pd_args)).split() + [self.filename]
                     p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     # print p.communicate()[1].decode('utf8')
                     html, warn = (m.decode('utf8') for m in p.communicate())
