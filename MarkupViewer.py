@@ -115,7 +115,7 @@ class App(QtGui.QMainWindow):
             # print element.tagName()
             # FIXME: actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)
             # besides, parent may have content AND children, e.g. li>ul>li
-            if not any(t for t in ('BODY', 'HEAD', 'META', 'TITLE', 'STYLE') if t == element.tagName()):
+            if not any(t for t in ('BODY', 'HEAD', 'META', 'TITLE', 'STYLE', 'TABLE', 'TBODY') if t == element.tagName()):
                 tree.append([element, element.toPlainText()])
             self.examine_doc_elements(element, tree)
             element = element.nextSibling()

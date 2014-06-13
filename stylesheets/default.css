@@ -105,5 +105,5 @@ body{font-size:16px;}
   -webkit-transition: background-color 1s; background-color: rgba(209, 232, 255, 0.8);
 }
 .markupviewerautoscrollend{
-  -webkit-transition: background-color 1s; background-color: transparent;
+  -webkit-transition: background-color 1s; background-color: none;
 }

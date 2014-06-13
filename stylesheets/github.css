@@ -38,13 +38,10 @@ dl {padding: 0; }
 blockquote {border-left: 4px solid #dddddd; padding: 0 15px; color: #777777; }
   blockquote > :first-child {margin-top: 0; }
   blockquote > :last-child {margin-bottom: 0; }
-table {padding: 0; }
-  table tr {border-top: 1px solid #cccccc; background-color: white; margin: 0;padding: 0; }
-    table tr:nth-child(2n) {background-color: #f8f8f8; }
-    table tr th {font-weight: bold; border: 1px solid #cccccc; text-align: left; margin: 0; padding: 6px 13px; }
-    table tr td {border: 1px solid #cccccc; text-align: left; margin: 0; padding: 6px 13px; }
-    table tr th :first-child, table tr td :first-child {margin-top: 0; }
-    table tr th :last-child, table tr td :last-child {margin-bottom: 0; }
+table { border: 1px solid #dddddd; border-collapse: collapse; }
+  table tr:nth-child(2n) {background-color: #f8f8f8; }
+  table tr th {font-weight: bold; border: 1px solid #dddddd !important; padding: 6px 13px !important; }
+  table tr td {border: 1px solid #dddddd !important; padding: 6px 13px !important; }
 img {max-width: 100%; }
 span.frame {display: block; overflow: hidden; }
   span.frame > span {border: 1px solid #dddddd; display: block; float: left; overflow: hidden; margin: 13px 0 0; padding: 7px; width: auto; }
@@ -81,5 +78,5 @@ body{font-size:14pt;}
   -webkit-transition: background-color 1s; background-color: rgba(209, 232, 255, 0.8);
 }
 .markupviewerautoscrollend{
-  -webkit-transition: background-color 1s; background-color: transparent;
+  -webkit-transition: background-color 1s; background-color: none;
 }
