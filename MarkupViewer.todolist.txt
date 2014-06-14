@@ -21,7 +21,6 @@ CSS:
   ☐ scrollbar @win8
 
 WebView:
-  ☐ reload → update [f5]
   ☐ zoom in/out
   Selection:
     ☐ statistics
@@ -46,6 +45,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ reload → update [f5] @project(WebView)
   ✔ print [ctrl+p] @project(File)
   ✔ scroll to changed part [seems tricky] @project(WebView)
   ✔ remember/restore geometry in/from @settings

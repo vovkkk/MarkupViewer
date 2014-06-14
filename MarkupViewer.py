@@ -293,6 +293,14 @@ class App(QtGui.QMainWindow):
         self.stats_menu = self.menuBar().addMenu('Statistics')
         self.toc.setDisabled(True)
         self.stats_menu.setDisabled(True)
+        # context menu
+        reload_action = self.web_view.page().action(QtWebKit.QWebPage.Reload)
+        reload_action.setShortcut(QtGui.QKeySequence.Refresh)
+        reload_action.triggered.connect(self.force_reload_view)
+        self.web_view.addAction(reload_action)
+
+    def force_reload_view(self):
+        self.thread1.last_modified = 0
 
     def search_panel(self):
         self.search_bar = QtGui.QToolBar()
@@ -345,12 +353,12 @@ class WatcherThread(QtCore.QThread):
         self.wait()
 
     def run(self):
-        last_modified = 0
+        self.last_modified = 0
         while True:
             warn = ''
             current_modified = os.path.getmtime(self.filename)
-            if last_modified != current_modified:
-                last_modified = current_modified
+            if self.last_modified != current_modified:
+                self.last_modified = current_modified
                 reader, writer = SetuptheReader._for(self.filename)
                 if not writer:
                     # TODO: make a proper error message
