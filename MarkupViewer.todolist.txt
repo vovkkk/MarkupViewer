@@ -18,7 +18,6 @@ CSS:
     JODYHiGHROLLER theme — oh, I gotta make it ☺
     or maybe… DA THEME FO REAL PLAYAZ
   ☐ staff css files, e.g. keep the current theme but set all margins to zero [probably new menu View]
-  ☐ scrollbar @win8
 
 WebView:
   ☐ zoom in/out
@@ -31,8 +30,6 @@ WebView:
 Search:
   ☐ make behavior of search more predictable [it sucks currently, tbh]
     e.g. if sth is found, user press highlight, press it again, search moves to the next result — it ought to stay where it was
-  ☐ next/prev buttons [enter, shift+enter]
-    why keybindings in PyQt/Qt are so stupid? even Tkinter is much better on this matter
 
 App [overall]:
   ☐ toc in sidebar [optional]
@@ -45,6 +42,8 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ next/prev buttons [enter, shift+enter] @project(Search)
+    why keybindings in PyQt/Qt are so insane? even Tkinter is much better on this matter
   ✔ reload → update [f5] @project(WebView)
   ✔ print [ctrl+p] @project(File)
   ✔ scroll to changed part [seems tricky] @project(WebView)

@@ -23,8 +23,6 @@ class App(QtGui.QMainWindow):
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
         except: pass
-        # if sys.getwindowsversion()[2] >= 9200:
-        #     QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('WindowsXP'))
         # Add the WebView control
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
@@ -43,7 +41,7 @@ class App(QtGui.QMainWindow):
         setattr(self.web_view, 'dragEnterEvent', self.dragEnterEvent)
         setattr(self.web_view, 'dropEvent', self.dropEvent)
         # ui
-        self.menu_bar()
+        self.menus()
         self.search_panel()
 
     def dragEnterEvent(self, event):
@@ -115,7 +113,7 @@ class App(QtGui.QMainWindow):
             # print element.tagName()
             # FIXME: actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)
             # besides, parent may have content AND children, e.g. li>ul>li
-            if not any(t for t in ('BODY', 'HEAD', 'META', 'TITLE', 'STYLE', 'TABLE', 'TBODY') if t == element.tagName()):
+            if not any(t for t in ('BODY', 'HEAD', 'META', 'TITLE', 'STYLE', 'TABLE', 'TBODY', 'UL', 'OL', 'LI') if t == element.tagName()):
                 tree.append([element, element.toPlainText()])
             self.examine_doc_elements(element, tree)
             element = element.nextSibling()
@@ -189,7 +187,7 @@ class App(QtGui.QMainWindow):
             unique_words = []
             # lame; incorrect for any lang with grammar cases
             for w in words:
-                if any(c for c in '(){}[]<>,.' if c in w):
+                if any(c for c in '(){}[]<>,.:;' if c in w):
                     unique_words.append(''.join(c for c in w.lower() if c not in '(){}[]<>,.'))
                 else:
                     unique_words.append(w.lower())
@@ -255,7 +253,7 @@ class App(QtGui.QMainWindow):
         p.findText('', p.FindFlags(8)) # clear prev highlight
         p.findText(text, back | wrap | case | high)
 
-    def menu_bar(self):
+    def menus(self):
         # TODO: hide menu?
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
@@ -307,7 +305,8 @@ class App(QtGui.QMainWindow):
         for v, t in (('close', u'×'), ('case', u'Aa'), ('wrap', QtGui.QIcon('icons/around.png')), ('high', QtGui.QIcon('icons/bulb.png')), ('next', QtGui.QIcon('icons/down.png')), ('prev', QtGui.QIcon('icons/up.png'))):
             if type(t) == unicode: vars(self)[v] = QtGui.QPushButton(t, self)
             else:                  vars(self)[v] = QtGui.QPushButton(t, '', self)
-        self.field = QtGui.QLineEdit()
+        class IHATEQT(QtGui.QLineEdit): pass
+        self.field = IHATEQT()
         def _toggle_btn(btn=''):
             self.field.setFocus()
             self.find(self.field.text(), btn)
@@ -323,8 +322,17 @@ class App(QtGui.QMainWindow):
                 if any(t for t in (self.next, self.prev) if t is w):
                     w.pressed[()].connect(lambda btn=w: _toggle_btn(btn))
         self.field.textChanged.connect(self.find)
-        self.field.returnPressed.connect(_toggle_btn)
+        setattr(self.field, 'keyPressEvent', self.searchShortcuts)
         self.close.pressed.connect(self.escape)
+
+    def searchShortcuts(self, event):
+        if not self.field.isVisible(): return
+        if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ShiftModifier and event.key() == 16777220:
+            self.find(self.field.text(), self.prev)
+        elif event.key() == 16777220:
+            self.find(self.field.text(), self.next)
+        else:
+            super(self.field.__class__, self.field).keyPressEvent(event)
 
     def print_doc(self):
         dialog = QtGui.QPrintPreviewDialog()
