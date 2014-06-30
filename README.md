@@ -1,7 +1,7 @@
 # MarkupViewer
 MarkupViewer is a simple previewer for various markup formats. The view will be refreshed when the opened file is saved, allowing you to use whatever editor you’d like and see the results immediately.
 
-![](http://storage5.static.itmages.ru/i/14/0314/h_1394820849_1018958_74a6ec8680.png)
+![](http://storage6.static.itmages.ru/i/14/0630/h_1404128604_3549738_b3b8c55834.png)
 
 ## Features
 * Cross Platform (tested only on Windows though)

@@ -324,6 +324,11 @@ class App(QtGui.QMainWindow):
         self.field.textChanged.connect(self.find)
         setattr(self.field, 'keyPressEvent', self.searchShortcuts)
         self.close.pressed.connect(self.escape)
+        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
+        if qsettings.value('search_bar', False).toBool():
+            self.show_search_panel()
+        for t, w in (('case_btn', self.case), ('wrap_btn', self.wrap), ('highlight_btn', self.high)):
+            w.setChecked(qsettings.value(t, False).toBool())
 
     def searchShortcuts(self, event):
         if not self.field.isVisible(): return
@@ -349,6 +354,9 @@ class App(QtGui.QMainWindow):
         qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
         qsettings.setValue('size', self.size())
         qsettings.setValue('pos', self.pos())
+        for t, w in (('search_bar', self.search_bar), ('case_btn', self.case), ('wrap_btn', self.wrap), ('highlight_btn', self.high)):
+            if 'btn' in t: qsettings.setValue(t, w.isChecked())
+            else:          qsettings.setValue(t, w.isVisible())
         QtGui.qApp.quit()
 
 
