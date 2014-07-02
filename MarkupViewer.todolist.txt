@@ -1,11 +1,10 @@
-FIXME (1)
-  ☐ .\MarkupViewer.py:207" actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)"
 TODO (5)
-  ☐ .\MarkupViewer.py:111" add commandline parameter to force specific geometry"
-  ☐ .\MarkupViewer.py:133" ¿ non-default browser @settings ?"
-  ☐ .\MarkupViewer.py:246" statistics — decimals is a huge problem"
-  ☐ .\MarkupViewer.py:322" hide menu?"
-  ☐ .\MarkupViewer.py:436" make a proper error message"
+  ☐ .\MarkupViewer.py:16" add commandline parameter to force specific geometry"
+  ☐ .\MarkupViewer.py:37" ¿ non-default browser @settings ?"
+  ☐ .\MarkupViewer.py:191" statistics — decimals is a huge problem"
+  ☐ .\MarkupViewer.py:281" hide menu?"
+  ☐ .\MarkupViewer.py:404" make a proper error message"
+
 
 File:
   ☐ open [ctrl+o]
@@ -41,6 +40,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)
   ✔ remember/restore state of each widget @project(App [overall])
   ✔ next/prev buttons [enter, shift+enter] @project(Search)
     why keybindings in PyQt/Qt are so insane? even Tkinter is much better on this matter
