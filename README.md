@@ -24,17 +24,16 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * Print
 
 ## Dependencies
-* [Python](http://python.org/) 2.7
+* [Python](https://www.python.org/downloads/) 2.7
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
-* [PyYAML](https://pypi.python.org/pypi/PyYAML/3.10)
 * Optional dependencies (any single one of them will be enough for correct support of appropriate format(s); asterisk determines packages are required for support of all declared formats):
+    * [PyYAML](https://pypi.python.org/pypi/PyYAML) is needed to read settings, if not installed MV will work using default settings
     * [asciidoc](http://sourceforge.net/projects/asciidoc/)<b>\*</b> (see `.\asciidoc\README.txt` for details)
-    * [python-creole](https://pypi.python.org/pypi/python-creole/1.1.1)<b>\*</b>
+    * [python-creole](https://pypi.python.org/pypi/python-creole)<b>\*</b>
     * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)<b>\*</b>
-    * [docutils](https://pypi.python.org/pypi/docutils/0.11)
+    * [docutils](https://pypi.python.org/pypi/docutils)
     * [Markdown](http://pypi.python.org/pypi/Markdown)
-    * [textile](https://pypi.python.org/pypi/textile/)
-
+    * [textile](https://pypi.python.org/pypi/textile)
 
 ## Usage
 ```
@@ -44,10 +43,6 @@ $ python MarkupViewer.py <file>
 To automatically open a file with this viewer in Windows, associate the filetype with the included `.bat` file.
 
 You can apply styles by dropping your stylesheets in the `stylesheets\` directory next to this script and selecting one from the Style menu.
-
-## Settings
-`settings.yaml` offers many options to fiddle with — simply open that file in any plain text editor.  
-*NOTE*, options without description are not implemented yet, they’re drafts… tbh, even some with descriptions are still drafts.
 
 ## Contributing
 Feel free to make improvements. Fork and send me a pull request.

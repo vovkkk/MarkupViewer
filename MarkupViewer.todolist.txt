@@ -3,8 +3,6 @@ TODO (5)
   ☐ .\MarkupViewer.py:37" ¿ non-default browser @settings ?"
   ☐ .\MarkupViewer.py:191" statistics — decimals is a huge problem"
   ☐ .\MarkupViewer.py:281" hide menu?"
-  ☐ .\MarkupViewer.py:404" make a proper error message"
-
 
 File:
   ☐ open [ctrl+o]

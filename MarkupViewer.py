@@ -1,7 +1,11 @@
 #!python2
 # coding: utf8
 
-import sys, time, os, webbrowser, importlib, itertools, locale, io, yaml, subprocess, threading, shutil
+import sys, time, os, webbrowser, importlib, itertools, locale, io, subprocess, threading, shutil
+try:
+    import yaml
+except ImportError:
+    yaml = None
 from PyQt4 import QtCore, QtGui, QtWebKit
 
 sys_enc        = locale.getpreferredencoding()
@@ -54,7 +58,7 @@ class App(QtGui.QMainWindow):
 
     def edit_file(self, fn):
         if not fn: fn = self.filename
-        args = Settings.get('editor', 'notepad').split() + [fn]
+        args = Settings.get('editor', 'sublime_text').split() + [fn]
         try:    subprocess.Popen(args)
         except:
             try:    subprocess.Popen(['notepad', fn])
@@ -242,6 +246,7 @@ class App(QtGui.QMainWindow):
     def _scroll(self, element=0):
         if element:
             margin = (int(element.styleProperty('margin-top', 2)[:~1]) or
+                      int(element.parent().styleProperty('margin-top', 2)[:~1]) or
                       int(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1]) or
                       0)
             self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top() - margin))
@@ -401,35 +406,49 @@ class WatcherThread(QtCore.QThread):
                 self.last_modified = current_modified
                 reader, writer = SetuptheReader._for(self.filename)
                 if not writer:
-                    # TODO: make a proper error message
-                    return reader
-                if writer == 'pandoc':
-                    path    = Settings.get('pandoc_path', 'pandoc')
-                    pd_args = Settings.get('pandoc_args', '')
-                    reader  = Settings.get('pandoc_markdown', 'markdown') if reader == 'markdown' else reader
-                    args = [path] + ('--from=%s %s' % (reader, pd_args)).split() + [self.filename]
-                    p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    # print p.communicate()[1].decode('utf8')
-                    html, warn = (m.decode('utf8') for m in p.communicate())
+                    html, warn = u'', self.tell_em()
+                elif writer == 'pandoc':
+                    html, warn = self.pandoc_rules(reader, writer)
                 else:
-                    with io.open(self.filename, 'r', encoding='utf8') as f:
-                        text = f.read()
-                    if reader == 'rst':
-                        html = writer(text, writer_name='html', settings_overrides={'stylesheet_path': ''})['body']
-                    elif reader == 'asciidoc':
-                        import StringIO
-                        infile = StringIO.StringIO(text.encode('utf8'))
-                        outfile = StringIO.StringIO()
-                        asciidoc = writer(asciidoc_py=os.path.join(script_dir, 'asciidoc/asciidoc.py'))
-                        asciidoc.options('--no-header-footer')
-                        asciidoc.execute(infile, outfile, backend='html5')
-                        html = outfile.getvalue().decode('utf8')
-                    else:
-                        html = writer(text)
-
+                    html = self.aint_no_need_pandoc(reader, writer)
                 self.emit(QtCore.SIGNAL('update(QString,QString)'), html, warn)
             time.sleep(0.5)
 
+    def tell_em(self):
+        warn = (u'<p>There is no module able to convert <b>%s</b>.</p>' % reader)
+        if Settings.get('via_pandoc', False):
+            warn += ('<p>Make sure <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a> is installed.</p>'
+                     'If it is installed for sure,<br>check if it is in PATH or<br>change <code>pandoc_path</code> in settings.')
+        else:
+            warn += 'Make sure certain package is installed<br>(see <a href="https://github.com/vovkkk/MarkupViewer#dependencies">Dependencies</a>).'
+        return warn
+
+    def pandoc_rules(self, reader, writer):
+        path    = Settings.get('pandoc_path', 'pandoc')
+        pd_args = Settings.get('pandoc_args', '')
+        reader  = Settings.get('pandoc_markdown', 'markdown') if reader == 'markdown' else reader
+        args = [path] + ('--from=%s %s' % (reader, pd_args)).split() + [self.filename]
+        p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        # print p.communicate()[1].decode('utf8')
+        html, warn = (m.decode('utf8') for m in p.communicate())
+        return (html, warn)
+
+    def aint_no_need_pandoc(self, reader, writer):
+        with io.open(self.filename, 'r', encoding='utf8') as f:
+            text = f.read()
+        if reader == 'rst':
+            html = writer(text, writer_name='html', settings_overrides={'stylesheet_path': ''})['body']
+        elif reader == 'asciidoc':
+            import StringIO
+            infile = StringIO.StringIO(text.encode('utf8'))
+            outfile = StringIO.StringIO()
+            asciidoc = writer(asciidoc_py=os.path.join(script_dir, 'asciidoc/asciidoc.py'))
+            asciidoc.options('--no-header-footer')
+            asciidoc.execute(infile, outfile, backend='html5')
+            html = outfile.getvalue().decode('utf8')
+        else:
+            html = writer(text)
+        return html
 
 class Settings:
     def __init__(self):
@@ -443,6 +462,9 @@ class Settings:
         return cls().settings.get(key, default_value)
 
     def reload_settings(self):
+        if not yaml:
+            self.settings = {}
+            return
         with io.open(self.settings_file, 'r', encoding='utf8') as f:
             self.settings = yaml.safe_load(f)
 
@@ -469,7 +491,16 @@ class SetuptheReader:
         reader, writer = SetuptheReader._for(filename)
         html = writer(unicode_object)
     '''
-    readers = Settings.get('formats', {'markdown': 'md'})
+    readers = Settings.get('formats', {
+                'asciidoc': 'txt',
+                'creole'  : 'creole',
+                'docbook' : 'dbk xml',
+                'latex'   : 'tex',
+                'markdown': 'md mdown markdn markdown',
+                'opml'    : 'opml',
+                'rst'     : 'rst',
+                'textile' : 'textile'
+                })
 
     @classmethod
     def _for(self, filename):
@@ -501,10 +532,11 @@ class SetuptheReader:
     def is_available(self, reader):
         via_pandoc = Settings.get('via_pandoc', False)
         if via_pandoc and (reader != 'creole') and (reader != 'asciidoc'):
-            try:            subprocess.call(['pandoc', '-v'], shell=True)
-            except OSError: via_pandoc = False
-            else:           return (reader, 'pandoc')
-        elif not via_pandoc or reader == 'creole' or reader == 'asciidoc':
+            if subprocess.call([Settings.get('pandoc_path', 'pandoc'), '-v'], shell=True):
+                via_pandoc = False
+            else:
+                return (reader, 'pandoc')
+        if not via_pandoc or reader == 'creole' or reader == 'asciidoc':
             writers = {
                 'asciidoc': ('asciidoc.asciidocapi', 'AsciiDocAPI'),
                 'creole'  : ('creole',        'creole2html'),
@@ -525,19 +557,18 @@ class SetuptheReader:
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    # if not (via_pandoc or via_markdown):
-    #     QtGui.QMessageBox.critical(QtGui.QWidget(),'MarkupViewer cannot convert a file',
-    #         'Please, install one of the following packages:<br>'
-    #         u'• <a href="https://pythonhosted.org/Markdown/install.html">Markdown</a><br>'
-    #         u'• <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>')
-    if True:
+    if len(sys.argv) != 2: test = App()
+    else:                  test = App(filename=sys.argv[1])
+    test.show()
+    if yaml:
         thread2 = threading.Thread(target=Settings().watch_settings)
         thread2.setDaemon(True)
         thread2.start()
-        if len(sys.argv) != 2: test = App()
-        else:                  test = App(filename=sys.argv[1])
-        test.show()
-        app.exec_()
+    else:
+        QtGui.QMessageBox.information(test,'PyYAML is not installed',
+            'MarkupViewer will work using default settings.<br>'
+            'In order to change settings, please install <a href="https://pypi.python.org/pypi/PyYAML/">PyYAML</a>.')
+    app.exec_()
 
 if __name__ == '__main__':
     main()
