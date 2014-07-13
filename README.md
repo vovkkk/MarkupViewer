@@ -28,7 +28,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
 * Optional dependencies (any single one of them will be enough for correct support of appropriate format(s); asterisk determines packages are required for support of all declared formats):
     * [PyYAML](https://pypi.python.org/pypi/PyYAML) is needed to read settings, if not installed MV will work using default settings
-    * [asciidoc](http://sourceforge.net/projects/asciidoc/)<b>\*</b> (see `.\asciidoc\README.txt` for details)
+    * [asciidoc](http://sourceforge.net/projects/asciidoc/)<b>\*</b> (see [`.\asciidoc\README.asciidoc`](asciidoc/README.asciidoc) for details)
     * [python-creole](https://pypi.python.org/pypi/python-creole)<b>\*</b>
     * [pandoc](http://johnmacfarlane.net/pandoc/installing.html)<b>\*</b>
     * [docutils](https://pypi.python.org/pypi/docutils)

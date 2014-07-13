@@ -13,10 +13,11 @@ pandoc_path_description: |
 pandoc_markdown: markdown
 pandoc_markdown_description: |
   pandoc_markdown option defines how pandoc should treat markdown files:
-  markdown          (pandoc’s extended markdown),
-  markdown_strict   (original unextended markdown),
-  markdown_phpextra (PHP Markdown Extra extended markdown),
-  markdown_github   (GitHub extended markdown);
+    markdown          (pandoc’s extended markdown),
+    markdown_strict   (original unextended markdown),
+    markdown_phpextra (PHP Markdown Extra extended markdown),
+    markdown_github   (GitHub extended markdown);
+  you can add/remove any extensions (see pandoc manual for details http://johnmacfarlane.net/pandoc/README.html#general-options)
 
 pandoc_args: "-thtml5 --smart --standalone"
 pandoc_args_description: |
@@ -25,7 +26,7 @@ pandoc_args_description: |
   cannot remove -t argument completely
 
 formats:
-  asciidoc: txt
+  asciidoc: adoc asciidoc
   creole  : creole
   docbook : dbk xml
   latex   : tex
@@ -41,7 +42,7 @@ no_extension: markdown
 no_extension_description: |
   no_extention defines how to treat files with no extensions (e.g. 'README')
   or uknown, i.e. the one absents in formats, extension (e.g. 'readme.blah');
-  possible values are creole, docbook, latex, markdown, opml, rst, textile
+  possible values are asciidoc, creole, docbook, latex, markdown, opml, rst, textile
 
 editor: sublime_text -n
 editor_description: |
@@ -52,7 +53,6 @@ editor_description: |
 show_full_path: true
 show_full_path_description: |
   full path to file in window title, if false then just a filename
-
 
 plugins: true
 plugins_description: |

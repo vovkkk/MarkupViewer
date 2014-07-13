@@ -1,6 +1,7 @@
 #!python2
 # coding: utf8
 
+from __future__ import print_function
 import sys, time, os, webbrowser, importlib, itertools, locale, io, subprocess, threading, shutil
 try:
     import yaml
@@ -96,8 +97,7 @@ class App(QtGui.QMainWindow):
         prev_doc         = self.web_view.page().currentFrame()
         self.prev_size   = prev_doc.contentsSize()
         self.prev_scroll = prev_doc.scrollPosition()
-        self.prev_ls     = []
-        self.examine_doc_elements(prev_doc.documentElement(), self.prev_ls)
+        self.prev_ls     = self.examine_doc_elements(prev_doc.documentElement())
         # actual update
         self.web_view.setHtml(text, baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
         # Delegate links to default browser
@@ -111,73 +111,68 @@ class App(QtGui.QMainWindow):
         if warn:
             QtGui.QMessageBox.warning(self, 'Converter says', warn)
 
-
-    def examine_doc_elements(self, parentElement, tree):
-        u'''input tree is empty list;
-            resulting list is similar to os.walk() result
-            [[parent, children, content], ...]
-            where
-                parent  : QWebElement
-                children: list of QWebElements
-                content : plain text of parent
+    def examine_doc_elements(self, parentElement):
+        u'''create tree of QWebElements starting from parentElement;
+            [
+              [Parent1, [[child, [child_of_child, ...], ...]],
+              [Parent2, [[child, [child_of_child, ...], ...]],
+              ...
+            ]
+            where Parent1 is the first child of parentElement;
+            each list contains QWebElement and list of its children recursively,
+            an empty list represents the absence of children
         '''
-        def first_level(element):
-            while not element.isNull():
-                if not any(t for t in ('HEAD', 'META', 'TITLE', 'STYLE') if t == element.tagName()):
-                    yield element
-                element = element.nextSibling()
-
-        def get_children(child, children):
-            while not child.isNull():
-                children.append(child)
-                child = child.nextSibling()
+        children = []
+        element = parentElement.firstChild()
+        while not element.isNull():
+            if not any(t for t in ('HEAD', 'META', 'TITLE', 'STYLE') if t == element.tagName()):
+                if element not in children:
+                    further = self.examine_doc_elements(element)
+                    children.append([element, further])
+            element = element.nextSibling()
+        if children:
             return children
 
-        def append_to_da_tree(element):
-            tree.append([element, get_children(element.firstChild(), []), element.toPlainText()])
-            for child in tree[~0][1]:
-                append_to_da_tree(child)
-
-        for sibling in first_level(parentElement.firstChild()):
-            append_to_da_tree(sibling)
-
-
     def after_update(self):
-        def compare_nodes(i, element, content, prev_len, curr_len):
-            # print element.tagName()
-            if curr_len > prev_len and i + 1 > prev_len:
-                # some block was appended to doc
-                return 1
-            elif curr_len < prev_len and  i + 1 == curr_len:
-                # some block was removed in the end of doc
-                return 1
-            elif element.tagName() == self.prev_ls[i][0].tagName():
-                # block’s content was changed
-                if content != self.prev_ls[i][2]:
-                    # print 'ya', element.geometry().top(), element.tagName(), unicode(content).encode('utf8', 'replace')
-                    return 1
-            else: # block in the middle of doc was changed (<p> → <h1>)
-                # print 'na', element.geometry().top(), unicode(content).encode('utf8', 'replace')
-                # print element.tagName(), self.prev_ls[i][0].tagName()
-                return 1
-            return 0
-        self.current_doc, current_ls = self.web_view.page().currentFrame(), []
-        self.examine_doc_elements(self.current_doc.documentElement(), current_ls)
-        # import pprint
-        # pprint.pprint([(a.tagName(), b) for a, b, _ in self.prev_ls])
-        # print '='*20
-        # pprint.pprint([(a.tagName(), b) for a, b, _ in  current_ls])
+        def compare(prev_ls, current_ls, prev_len, curr_len, go):
+            for i, (element, children) in enumerate(current_ls):
+                if children:
+                    if prev_ls:
+                        prev_children = prev_ls[i][1]
+                        prev_children_len = len(prev_children) if prev_children else 0
+                        go = compare(prev_children, children, prev_children_len, len(children), go)
+                        if go:
+                            return go
+                    else:
+                        return children[0][0]
+                if element.tagName() == 'BODY':
+                    go = 0
+                elif curr_len > prev_len and i + 1 > prev_len:
+                    # some block was appended to doc
+                    go = 1
+                elif curr_len < prev_len and  i + 1 == curr_len:
+                    # some block was removed in the end of doc
+                    go = 1
+                elif element.tagName() == prev_ls[i][0].tagName():
+                    if element.toInnerXml() != prev_ls[i][0].toInnerXml():
+                        # block’s content was changed
+                        go = 1
+                        # print ('ya', element.geometry().top(), element.tagName(), unicode(element.toPlainText()).encode('utf8', 'replace'))
+                else: # block in the middle of doc was changed (<p> → <h1>)
+                    go = 1
+                    # print ('na', element.geometry().top(), unicode(element.toPlainText()).encode('utf8', 'replace'))
+                    # print (element.tagName(), self.prev_ls[i][0].tagName())
+                if go:
+                    value = element
+                    break
+                elif not go and i + 1 == curr_len:
+                    # no actual changes, keep scrollbar in place
+                    value = 0
+            return value
+        self.current_doc = self.web_view.page().currentFrame()
+        current_ls       = self.examine_doc_elements(self.current_doc.documentElement())
         prev_len, curr_len, go = len(self.prev_ls), len(current_ls), 0
-        for i, (element, children, content) in enumerate(current_ls):
-            if not children:
-                go = compare_nodes(i, element, content, prev_len, curr_len)
-            if go:
-                self._scroll(element)
-                break
-            if not go and i + 1 == curr_len:
-                # no actual changes, keep scrollbar in place
-                self._scroll()
-        # print '='*20
+        self._scroll(compare(self.prev_ls, current_ls, prev_len, curr_len, go))
         self.generate_toc(current_ls)
         self.calc_stats()
 
@@ -225,10 +220,18 @@ class App(QtGui.QMainWindow):
             self.stats_menu.setTitle('Statistics')
 
     def generate_toc(self, current_ls):
+        def flatten(ls):
+            for item in ls:
+                if not item: continue
+                if isinstance(item, list):
+                    for x in flatten(item):
+                        yield x
+                else:
+                    yield item
         self.toc.clear()
         self.toc.setDisabled(True)
         headers = []
-        for element, _, _ in current_ls:
+        for element in flatten(current_ls):
             if element.tagName()[0] == 'H' and len(element.tagName()) == 2 and not 'HR' in element.tagName():
                 headers.append(element)
         for n, h in enumerate(headers, start=1):
@@ -257,7 +260,7 @@ class App(QtGui.QMainWindow):
         else:
             current_size = self.current_doc.contentsSize()
             ypos = self.prev_scroll.y() - (self.prev_size.height() - current_size.height())
-            # print '%s = %s - (%s - %s)' % (ypos, self.prev_scroll.y(), self.prev_size.height(), current_size.height())
+            # print ('%s = %s - (%s - %s)' % (ypos, self.prev_scroll.y(), self.prev_size.height(), current_size.height()))
             self.current_doc.scroll(0, ypos)
 
     def set_stylesheet(self, stylesheet='default.css'):
@@ -406,7 +409,7 @@ class WatcherThread(QtCore.QThread):
                 self.last_modified = current_modified
                 reader, writer = SetuptheReader._for(self.filename)
                 if not writer:
-                    html, warn = u'', self.tell_em()
+                    html, warn = u'', self.tell_em(reader)
                 elif writer == 'pandoc':
                     html, warn = self.pandoc_rules(reader, writer)
                 else:
@@ -414,7 +417,7 @@ class WatcherThread(QtCore.QThread):
                 self.emit(QtCore.SIGNAL('update(QString,QString)'), html, warn)
             time.sleep(0.5)
 
-    def tell_em(self):
+    def tell_em(self, reader):
         warn = (u'<p>There is no module able to convert <b>%s</b>.</p>' % reader)
         if Settings.get('via_pandoc', False):
             warn += ('<p>Make sure <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a> is installed.</p>'

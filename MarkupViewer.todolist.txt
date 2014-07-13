@@ -38,6 +38,8 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ create a proper tree for doc @project(WebView)
+    [el, [child1, [child1_children ...], [child2, [child2_children ...], ...]]
   ✔ actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)
   ✔ remember/restore state of each widget @project(App [overall])
   ✔ next/prev buttons [enter, shift+enter] @project(Search)
