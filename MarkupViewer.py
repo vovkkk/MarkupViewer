@@ -413,7 +413,9 @@ class WatcherThread(QtCore.QThread):
                 elif writer == 'pandoc':
                     html, warn = self.pandoc_rules(reader, writer)
                 else:
-                    html = self.aint_no_need_pandoc(reader, writer)
+                    try:  html = self.aint_no_need_pandoc(reader, writer)
+                    except Exception as e:
+                        html, warn = '', u'<b>%s</b><br>%s' % (str(writer)[1:-1], e)
                 self.emit(QtCore.SIGNAL('update(QString,QString)'), html, warn)
             time.sleep(0.5)
 
