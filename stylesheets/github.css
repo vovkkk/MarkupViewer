@@ -61,7 +61,7 @@ span.float-left {display: block; margin-right: 13px; overflow: hidden; float: le
 span.float-right {display: block; margin-left: 13px; overflow: hidden; float: right; }
   span.float-right > span {display: block; overflow: hidden; margin: 13px auto 0;   text-align: right; }
 pre, code, tt, .monospaced {font-family: Consolas, monospace;}
-p>code{font-size: 0.9em;}
+p>code{font-size: 0.9em; word-wrap: break-word}
 code, tt, .monospaced {margin: 0 2px; padding: 0 5px; white-space: pre-wrap; border: 1px solid #eaeaea; background-color: #f8f8f8; }
 pre code { margin: 0; padding: 0;  border: none; background: transparent; }
 .highlight pre {background-color: #f8f8f8; border: 1px solid #cccccc; overflow: auto; padding: 6px 10px;}

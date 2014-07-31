@@ -48,9 +48,9 @@ class App(QtGui.QMainWindow):
         # ui
         self.menus()
         self.search_panel()
+        self.toc_panel()
 
-    def dragEnterEvent(self, event):
-        event.accept()
+    def dragEnterEvent(self, event): event.accept()
 
     def dropEvent(self, event):
         fn = event.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
@@ -234,6 +234,7 @@ class App(QtGui.QMainWindow):
         for element in flatten(current_ls):
             if element.tagName()[0] == 'H' and len(element.tagName()) == 2 and not 'HR' in element.tagName():
                 headers.append(element)
+        self.toc.addAction(self.toc_panel_action)
         for n, h in enumerate(headers, start=1):
             try:
                 indent = int(h.tagName()[1:])
@@ -242,9 +243,14 @@ class App(QtGui.QMainWindow):
                 break
             else:
                 self.toc.setDisabled(False)
-            vars(self)['toc_nav%d'%n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png'%indent),'%s%s'% ('  '*indent, h.toPlainText()), self)
+            title = '  '*indent + h.toPlainText()
+            vars(self)['toc_nav%d'%n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png'%indent), title, self)
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
+        self.toc_list.clear()
+        self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
+        self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
+        self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
 
     def _scroll(self, element=0):
         if element:
@@ -275,6 +281,15 @@ class App(QtGui.QMainWindow):
         self.search_bar.show()
         self.field.setFocus()
         self.field.selectAll()
+
+    def show_toc_panel(self):
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock)
+        if self.dock.isVisible():
+            self.dock.hide()
+            self.toc_panel_action.setChecked(False)
+        else:
+            self.dock.show()
+            self.toc_panel_action.setChecked(True)
 
     def find(self, text, btn=''):
         p = self.web_view.page()
@@ -320,6 +335,12 @@ class App(QtGui.QMainWindow):
             self.set_stylesheet(Settings.get('style', 'default.css'))
 
         self.toc = self.menuBar().addMenu('Table of &content')
+        self.toc.setStyleSheet('menu-scrollable: 1')
+        self.toc_panel_action = QtGui.QAction('Show in sidebar', self)
+        self.toc_panel_action.setCheckable(True)
+        self.toc_panel_action.triggered.connect(self.show_toc_panel)
+        self.toc.addAction(self.toc_panel_action)
+
         self.stats_menu = self.menuBar().addMenu('Statistics')
         self.toc.setDisabled(True)
         self.stats_menu.setDisabled(True)
@@ -371,6 +392,15 @@ class App(QtGui.QMainWindow):
         else:
             super(self.field.__class__, self.field).keyPressEvent(event)
 
+    def toc_panel(self):
+        self.dock = QtGui.QDockWidget("  TOC", self)
+        self.dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+        self.toc_list = QtGui.QListWidget(self.dock)
+        self.dock.setWidget(self.toc_list)
+        self.dock.hide()
+        self.dock.visibilityChanged.connect(lambda v: self.toc_panel_action.setChecked(v))
+        self.setStyleSheet('QListWidget{border:0px}')
+
     def print_doc(self):
         dialog = QtGui.QPrintPreviewDialog()
         dialog.paintRequested.connect(self.web_view.print_)
@@ -411,7 +441,7 @@ class WatcherThread(QtCore.QThread):
                 if not writer:
                     html, warn = u'', self.tell_em(reader)
                 elif writer == 'pandoc':
-                    html, warn = self.pandoc_rules(reader, writer)
+                    html, warn = self.pandoc_rules(reader)
                 else:
                     try:  html = self.aint_no_need_pandoc(reader, writer)
                     except Exception as e:
@@ -428,7 +458,7 @@ class WatcherThread(QtCore.QThread):
             warn += 'Make sure certain package is installed<br>(see <a href="https://github.com/vovkkk/MarkupViewer#dependencies">Dependencies</a>).'
         return warn
 
-    def pandoc_rules(self, reader, writer):
+    def pandoc_rules(self, reader):
         path    = Settings.get('pandoc_path', 'pandoc')
         pd_args = Settings.get('pandoc_args', '')
         reader  = Settings.get('pandoc_markdown', 'markdown') if reader == 'markdown' else reader
@@ -454,6 +484,7 @@ class WatcherThread(QtCore.QThread):
         else:
             html = writer(text)
         return html
+
 
 class Settings:
     def __init__(self):

@@ -19,7 +19,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
     * Textile
 * Linked table of content
 * Statistics — words, characters and lines count  
-    It, also, tries to count amount of the unique words in a document. However, take the results with a grain of salt — the application has no clue about grammatical cases.
+    It, also, tries to count amount of the unique words in a document. However, take the results with a grain of salt — the application has no clue about grammatical cases.
 * Drag and drop any file on an existing MV window to preview the file
 * Print
 

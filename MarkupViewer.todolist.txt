@@ -28,8 +28,15 @@ Search:
   ☐ make behavior of search more predictable [it sucks currently, tbh]
     e.g. if sth is found, user press highlight, press it again, search moves to the next result — it ought to stay where it was
 
+TOC in sidebar:
+  ☐ filter headers
+  ☐ Captain Obvious shall help when no headers
+  ☐ remember/restore state
+  ☐ ¿ folding ?
+  ☐ set sensible width by default [25-30% of window]
+  ☐ doublclick separator to set width needed for no horizontal scrollbar
+
 App [overall]:
-  ☐ toc in sidebar [optional]
   ☐ ¿recently used docs?
   ☐ make exe
   ☐ installer
@@ -38,6 +45,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ toc in sidebar [optional] @project(App [overall])
   ✔ create a proper tree for doc @project(WebView)
     [el, [child1, [child1_children ...], [child2, [child2_children ...], ...]]
   ✔ actually need to filter all parents (not only BODY) or something, e.g. <ul> is the issue (and I don’t even want to try it with tables)
