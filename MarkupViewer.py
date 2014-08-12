@@ -3,12 +3,14 @@
 
 from __future__ import print_function
 import sys, time, os, webbrowser, importlib, itertools, locale, io, subprocess, threading, shutil
+import platform
 try:
     import yaml
 except ImportError:
     yaml = None
 from PyQt4 import QtCore, QtGui, QtWebKit
 
+os_name        = platform.system() # 'Linux' or 'Windows'
 sys_enc        = locale.getpreferredencoding()
 script_dir     = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
@@ -488,7 +490,14 @@ class WatcherThread(QtCore.QThread):
 
 class Settings:
     def __init__(self):
-        self.user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
+        if(os_name == 'Linux'):
+            self.user_source = os.path.expanduser('~') + '/.MarkupViewer/settings.yaml'
+        elif(os_name == 'Windows'):
+            self.user_source = os.path.join(os.getenv('APPDATA' ,'MarkupViewer/settings.yaml'))
+        else:
+            self.user_source = 'MarkupViewer/settings.yaml'
+        # print(self.user_source)
+
         self.app_source  = os.path.join(script_dir, 'settings.yaml')
         self.settings_file = self.user_source if os.path.exists(self.user_source) else self.app_source
         self.reload_settings()
