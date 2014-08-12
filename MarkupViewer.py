@@ -65,7 +65,8 @@ class App(QtGui.QMainWindow):
             try:    subprocess.Popen(['notepad', fn])
             except: QtGui.QMessageBox.critical(self,
                         'MarkupViewer cannot find a text editor',
-                        'Change <code>editor</code> field in <code>settings.yaml</code> file.<br><br>'
+                        'Please, install <a href="https://pypi.python.org/pypi/PyYAML/">PyYAML</a> (if not yet).<br><br>'
+                        'And then change <code>editor</code> field in <code>settings.yaml</code> file.<br><br>'
                         'It can be found in <pre>{0}</pre> or in <pre>{1}</pre> it is editable in any text editor.'
                         .format(*(os.path.normpath(s) for s in (Settings().user_source, Settings().app_source)))
                     )
@@ -254,9 +255,9 @@ class App(QtGui.QMainWindow):
 
     def _scroll(self, element=0):
         if element:
-            margin = (int(element.styleProperty('margin-top', 2)[:~1]) or
-                      int(element.parent().styleProperty('margin-top', 2)[:~1]) or
-                      int(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1]) or
+            margin = (int(float(element.styleProperty('margin-top', 2)[:~1])) or
+                      int(float(element.parent().styleProperty('margin-top', 2)[:~1])) or
+                      int(float(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1])) or
                       0)
             self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top() - margin))
             element.addClass('markupviewerautoscrollstart')
@@ -488,8 +489,11 @@ class WatcherThread(QtCore.QThread):
 
 class Settings:
     def __init__(self):
-        self.user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
-        self.app_source  = os.path.join(script_dir, 'settings.yaml')
+        if os.name == 'nt':
+            self.user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
+        else: # for Linux & OSX
+            self.user_source = os.path.join(os.getenv('HOME'), '.config/MarkupViewer/settings.yaml')
+        self.app_source = os.path.join(script_dir, 'settings.yaml')
         self.settings_file = self.user_source if os.path.exists(self.user_source) else self.app_source
         self.reload_settings()
 
@@ -515,7 +519,9 @@ class Settings:
 
     def edit_settings(self):
         if not os.path.exists(self.user_source):
-            os.makedirs(os.path.dirname(self.user_source))
+            userfld = os.path.dirname(self.user_source)
+            if not os.path.isdir(userfld):
+                os.makedirs(os.path.dirname(self.user_source))
             shutil.copy2(self.app_source, self.user_source)
             self.settings_file = self.user_source
         return self.settings_file
