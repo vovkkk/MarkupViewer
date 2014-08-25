@@ -36,6 +36,11 @@ TOC in sidebar:
   ☐ set sensible width by default [25-30% of window]
   ☐ doublclick separator to set width needed for no horizontal scrollbar
 
+Update notification:
+  ☐ download internally
+  ☐ unpack and apply changes
+  ☐ research possible fails (no connection, 403, 503, ¿what else?); handle ’em
+
 App [overall]:
   ☐ ¿recently used docs?
   ☐ make exe

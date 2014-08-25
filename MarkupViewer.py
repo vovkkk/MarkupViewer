@@ -2,7 +2,7 @@
 # coding: utf8
 
 from __future__ import print_function
-import sys, time, os, webbrowser, importlib, itertools, locale, io, subprocess, threading, shutil
+import sys, time, os, webbrowser, importlib, itertools, locale, io, subprocess, threading, shutil, urllib2, json, datetime
 try:
     import yaml
 except ImportError:
@@ -49,6 +49,9 @@ class App(QtGui.QMainWindow):
         self.menus()
         self.search_panel()
         self.toc_panel()
+        # update
+        QtCore.QTimer.singleShot(60000, lambda: CheckUpdate(self))
+
 
     def dragEnterEvent(self, event): event.accept()
 
@@ -270,6 +273,7 @@ class App(QtGui.QMainWindow):
             # print ('%s = %s - (%s - %s)' % (ypos, self.prev_scroll.y(), self.prev_size.height(), current_size.height()))
             self.current_doc.scroll(0, ypos)
 
+    @staticmethod
     def set_stylesheet(self, stylesheet='default.css'):
         # QT only works when the slashes are forward??
         full_path = 'file://' + os.path.join(stylesheet_dir, stylesheet)
@@ -333,7 +337,7 @@ class App(QtGui.QMainWindow):
             styleMenu = menubar.addMenu('&Style')
             for item in sheets:
                 styleMenu.addAction(item)
-            self.set_stylesheet(Settings.get('style', 'default.css'))
+            self.set_stylesheet(self, Settings.get('style', 'default.css'))
 
         self.toc = self.menuBar().addMenu('Table of &content')
         self.toc.setStyleSheet('menu-scrollable: 1')
@@ -595,6 +599,74 @@ class SetuptheReader:
             else:
                 print(reader, writer)
                 return (reader, writer)
+
+
+class CheckUpdate:
+    def __init__(self, parent):
+        self.t = self.Check()
+        self.t.start()
+        self.t.finished.connect(lambda: self.notify(self.t.response, parent))
+
+    class Check(QtCore.QThread):
+        def __init__(self): QtCore.QThread.__init__(self)
+        def run(self):
+            request  = urllib2.urlopen('https://api.github.com/repos/vovkkk/MarkupViewer/releases').read()
+            self.response = json.loads(request)[0]
+
+    def notify(self, response, parent):
+        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
+        last_update = qsettings.value('last_update', datetime.datetime(2014, 1, 1, 1, 1, 1)).toPyObject()
+        published   = datetime.datetime.strptime(response.get('published_at', ''), '%Y-%m-%dT%H:%M:%SZ')
+        now         = datetime.datetime.now()
+        if now - last_update > datetime.timedelta(7) and published > last_update:
+            qsettings.setValue('last_update', now)
+            notify = self.Notification(parent)
+            notify.show()
+            link = (response['assets'][0]['browser_download_url'] if os.name == 'nt' else response['tarball_url'])
+            size = round(float(response['assets'][0]['size'])/10**6, 2)
+            togh = response['html_url']
+            body = response.get('body', '# FAIL ;D')
+            _, writer = SetuptheReader.is_available('markdown')
+            if not writer:
+                text = body.replace('\n', '<br>')
+            elif writer == 'pandoc':
+                path = Settings.get('pandoc_path', 'pandoc')
+                args = [path] + ('--from=markdown %s' % Settings.get('pandoc_args', '')).split()
+                p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                text = p.communicate(body.encode('utf8'))[0].decode('utf8')
+            else:
+                text = writer(body)
+            notify.web_view.setHtml(text)
+            App.set_stylesheet(notify, Settings.get('style', 'default.css'))
+            notify.download.setText('Download (%s MB)' % size)
+            notify.download.pressed.connect(lambda: webbrowser.open(link))
+            notify.go_to_gh.pressed.connect(lambda: webbrowser.open(togh))
+
+    class Notification(QtGui.QMainWindow):
+        def __init__(self, parent=None):
+            QtGui.QMainWindow.__init__(self, parent)
+            self.setWindowTitle(u'New version of MarkupViewer is availiable')
+            self.resize(QtCore.QSize(450, 400))
+
+            self.web_view = QtWebKit.QWebView()
+            self.setCentralWidget(self.web_view)
+
+            tb = QtGui.QToolBar()
+            tb.setMovable(False)
+            self.setStyleSheet('QToolBar{border: 0px; margin: 10px; spacing:10px}'
+                               'QPushButton{padding: 5px 10px}')
+
+            spacer = QtGui.QWidget()
+            spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+            self.download = QtGui.QPushButton('Download')
+            self.go_to_gh = QtGui.QPushButton('Go to GitHub')
+            self.cancel   = QtGui.QPushButton('Cancel')
+            self.cancel.setShortcut('Esc')
+            self.cancel.pressed.connect(lambda: self.close())
+            for b in (spacer, self.download, self.go_to_gh, self.cancel):
+                tb.addWidget(b)
+
+            self.addToolBar(0x8, tb)
 
 
 def main():
