@@ -26,14 +26,19 @@ pandoc_args_description: |
   cannot remove -t argument completely
 
 formats:
-  asciidoc: adoc asciidoc
-  creole  : creole
-  docbook : dbk xml
-  latex   : tex
-  markdown: md mdown markdn markdown
-  opml    : opml
-  rst     : rst
-  textile : textile
+  asciidoc : adoc asciidoc
+  creole   : creole
+  docbook  : dbk xml
+  docx     : docx
+  epub     : epub
+  latex    : tex
+  markdown : md mdown markdn markdown
+  mediawiki: mediawiki
+  opml     : opml
+  org      : org
+  rst      : rst
+  t2t      : t2t
+  textile  : textile
 formats_description: |
   formats defines how to treat file extensions, you can freely redefine them,
   however, beware of duplications — they may lead to unexpected results

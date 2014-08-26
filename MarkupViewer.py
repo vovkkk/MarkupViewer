@@ -52,7 +52,6 @@ class App(QtGui.QMainWindow):
         # update
         QtCore.QTimer.singleShot(60000, lambda: CheckUpdate(self))
 
-
     def dragEnterEvent(self, event): event.accept()
 
     def dropEvent(self, event):
@@ -252,6 +251,7 @@ class App(QtGui.QMainWindow):
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
         self.toc_list.clear()
+        if not headers: return
         self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
         self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
         self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
@@ -538,14 +538,19 @@ class SetuptheReader:
         html = writer(unicode_object)
     '''
     readers = Settings.get('formats', {
-                'asciidoc': 'txt',
-                'creole'  : 'creole',
-                'docbook' : 'dbk xml',
-                'latex'   : 'tex',
-                'markdown': 'md mdown markdn markdown',
-                'opml'    : 'opml',
-                'rst'     : 'rst',
-                'textile' : 'textile'
+                'asciidoc' : 'adoc asciidoc',
+                'creole'   : 'creole',
+                'docbook'  : 'dbk xml',
+                'docx'     : 'docx',
+                'epub'     : 'epub',
+                'latex'    : 'tex',
+                'markdown' : 'md mdown markdn markdown',
+                'mediawiki': 'mediawiki',
+                'opml'     : 'opml',
+                'org'      : 'org',
+                'rst'      : 'rst',
+                't2t'      : 't2t',
+                'textile'  : 'textile'
                 })
 
     @classmethod

@@ -12,11 +12,16 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
     * AsciiDoc
     * Creole
     * DocBook<b>\*</b>
-    * Markdown, Pandoc-flavour<b>\*</b>, GitHub-flavour<b>\*</b>
+    * EPUB<b>\*</b>
+    * Markdown, Pandoc-flavour<b>\*</b>, GitHub-flavour<b>\*</b>, PHP Markdown Extra<b>\*</b>
+    * MediaWiki<b>\*</b>
     * reStructuredText
     * LaTeX<b>\*</b>
+    * Office Open XML<b>\*</b> (aka docx)
     * OPML<b>\*</b>
+    * OrgMode<b>\*</b>
     * Textile
+    * txt2tags<b>\*</b>
 * Linked table of content
 * Statistics — words, characters and lines count  
     It, also, tries to count amount of the unique words in a document. However, take the results with a grain of salt — the application has no clue about grammatical cases.
