@@ -1,8 +1,8 @@
-TODO (5)
-  ☐ .\MarkupViewer.py:16" add commandline parameter to force specific geometry"
-  ☐ .\MarkupViewer.py:37" ¿ non-default browser @settings ?"
-  ☐ .\MarkupViewer.py:191" statistics — decimals is a huge problem"
-  ☐ .\MarkupViewer.py:281" hide menu?"
+TODO (4)
+  ☐ .\MarkupViewer.py:21" add commandline parameter to force specific geometry"
+  ☐ .\MarkupViewer.py:42" ¿ non-default browser @settings ?"
+  ☐ .\MarkupViewer.py:193" statistics — decimals is a huge problem"
+  ☐ .\MarkupViewer.py:309" hide menu?"
 
 File:
   ☐ open [ctrl+o]
@@ -42,6 +42,9 @@ Update notification:
   ☐ research possible fails (no connection, 403, 503, ¿what else?); handle ’em
 
 App [overall]:
+  ☐ ¡ keybindings is just «argh!! FORGODSAKE!!!!11» !
+       need to find a way to improve it; and make ’em fully customisable
+  ☐ ¿QFileSystemWatcher?   http://pyqt.sourceforge.net/Docs/PyQt4/qfilesystemwatcher.html
   ☐ ¿recently used docs?
   ☐ make exe (see https://pypi.python.org/pypi/pynsist)
   ☐ installer
@@ -50,6 +53,7 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ tooltips for buttons @project(Search)
   ✔ toc in sidebar [optional] @project(App [overall])
   ✔ create a proper tree for doc @project(WebView)
     [el, [child1, [child1_children ...], [child2, [child2_children ...], ...]]

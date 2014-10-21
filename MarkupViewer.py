@@ -333,7 +333,7 @@ class App(QtGui.QMainWindow):
                 if len(sheets) < 10:
                     sheets[-1].setShortcut('Ctrl+%d' % len(sheets))
                 sheets[-1].triggered.connect(
-                    lambda x, stylesheet=f: self.set_stylesheet(stylesheet))
+                    lambda x, stylesheet=f: self.set_stylesheet(self, stylesheet))
             styleMenu = menubar.addMenu('&Style')
             for item in sheets:
                 styleMenu.addAction(item)
@@ -360,9 +360,19 @@ class App(QtGui.QMainWindow):
 
     def search_panel(self):
         self.search_bar = QtGui.QToolBar()
-        for v, t in (('close', u'×'), ('case', u'Aa'), ('wrap', QtGui.QIcon('icons/around.png')), ('high', QtGui.QIcon('icons/bulb.png')), ('next', QtGui.QIcon('icons/down.png')), ('prev', QtGui.QIcon('icons/up.png'))):
-            if type(t) == unicode: vars(self)[v] = QtGui.QPushButton(t, self)
-            else:                  vars(self)[v] = QtGui.QPushButton(t, '', self)
+        for b, n, t in (
+         ('close',      u'×',                      'Close (Escape)'),
+         ('case',       u'Aa',                     'Case sensitive'),
+         ('wrap', QtGui.QIcon('icons/around.png'), 'Wrap'),
+         ('high', QtGui.QIcon('icons/bulb.png'),   'Highlight all matches'),
+         ('next', QtGui.QIcon('icons/down.png'),   'Find next (Enter)'),
+         ('prev', QtGui.QIcon('icons/up.png'),     'Find previous (Shift+Enter)')
+        ):
+            if isinstance(n, unicode):
+                vars(self)[b] = QtGui.QPushButton(n, self)
+            else:
+                vars(self)[b] = QtGui.QPushButton(n, '', self)
+            vars(self)[b].setToolTip(t)
         class IHATEQT(QtGui.QLineEdit): pass
         self.field = IHATEQT()
         def _toggle_btn(btn=''):
@@ -389,10 +399,21 @@ class App(QtGui.QMainWindow):
             w.setChecked(qsettings.value(t, False).toBool())
 
     def searchShortcuts(self, event):
+        '''useful links:
+            http://pyqt.sourceforge.net/Docs/PyQt4/qt.html#Key-enum
+            http://pyqt.sourceforge.net/Docs/PyQt4/qkeysequence.html#details
+            http://pyqt.sourceforge.net/Docs/PyQt4/qkeyevent.html
+        tbh, all keybindings stuff in Qt is completely frustrating :(
+        '''
         if not self.field.isVisible(): return
-        if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ShiftModifier and event.key() == 16777220:
-            self.find(self.field.text(), self.prev)
-        elif event.key() == 16777220:
+        key = event.key()
+        modifier = event.modifiers()
+        return_key = key == 16777220
+        enter_key  = key == 16777221
+        if (return_key and modifier == QtCore.Qt.ShiftModifier) or (
+            enter_key  and modifier != QtCore.Qt.KeypadModifier):
+                self.find(self.field.text(), self.prev)
+        elif return_key or enter_key:
             self.find(self.field.text(), self.next)
         else:
             super(self.field.__class__, self.field).keyPressEvent(event)
