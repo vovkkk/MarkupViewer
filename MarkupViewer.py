@@ -12,6 +12,7 @@ from PyQt4 import QtCore, QtGui, QtWebKit
 sys_enc        = locale.getpreferredencoding()
 script_dir     = os.path.dirname(os.path.realpath(__file__))
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
+VERSION = 'unreleased'
 
 
 class App(QtGui.QMainWindow):
@@ -339,16 +340,34 @@ class App(QtGui.QMainWindow):
                 styleMenu.addAction(item)
             self.set_stylesheet(self, Settings.get('style', 'default.css'))
 
-        self.toc = self.menuBar().addMenu('Table of &content')
+        self.toc = menubar.addMenu('Table of &content')
         self.toc.setStyleSheet('menu-scrollable: 1')
         self.toc_panel_action = QtGui.QAction('Show in sidebar', self)
         self.toc_panel_action.setCheckable(True)
         self.toc_panel_action.triggered.connect(self.show_toc_panel)
         self.toc.addAction(self.toc_panel_action)
 
-        self.stats_menu = self.menuBar().addMenu('Statistics')
+        self.stats_menu = menubar.addMenu('Statistics')
         self.toc.setDisabled(True)
         self.stats_menu.setDisabled(True)
+
+        menubar_on_right = QtGui.QMenuBar()
+        menubar.setCornerWidget(menubar_on_right, QtCore.Qt.TopRightCorner)
+
+        self.about = QtGui.QAction('About', self)
+        about = QtGui.QMessageBox(0, 'About MarkupViewer',
+         '<table cellspacing="50"><tr valign="middle">'
+         '<td><img src="icons/markup.ico"></td>'
+         '<td style="white-space: nowrap">Version: %s<br><br>'
+           '<a href="https://github.com/vovkkk/MarkupViewer/issues/new">Send feedback</a>'
+           '<br><br><br><br>'
+           u'© 2013 Matthew Borgerson<br>© 2014 Vova Kolobok<br><br>'
+           '<a href="http://www.gnu.org/licenses/gpl-2.0.html">The GNU General Public License</a>'
+         '</td></tr></table>'
+         % (VERSION), parent=self)
+        self.about.triggered.connect(lambda: about.show())
+        menubar_on_right.addAction(self.about)
+
         # context menu
         reload_action = self.web_view.page().action(QtWebKit.QWebPage.Reload)
         reload_action.setShortcut(QtGui.QKeySequence.Refresh)
