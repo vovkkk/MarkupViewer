@@ -29,11 +29,7 @@ Search:
     e.g. if sth is found, user press highlight, press it again, search moves to the next result — it ought to stay where it was
 
 TOC in sidebar:
-  ☐ filter headers
-  ☐ Captain Obvious shall help when no headers
-  ☐ remember/restore state
   ☐ ¿ folding ?
-  ☐ set sensible width by default [25-30% of window]
   ☐ doublclick separator to set width needed for no horizontal scrollbar
 
 Update notification:
@@ -53,6 +49,11 @@ App [overall]:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+  ✔ set sensible width by default [25-30% of window] @project(TOC in sidebar)
+  ✔ remember/restore state @project(TOC in sidebar)
+  ✔ Captain Obvious shall help when no headers @project(TOC in sidebar)
+    i.e. disable list and filter; BUT need to find more elegant (visually) way
+  ✔ filter headers @project(TOC in sidebar)
   ✔ tooltips for buttons @project(Search)
   ✔ toc in sidebar [optional] @project(App [overall])
   ✔ create a proper tree for doc @project(WebView)

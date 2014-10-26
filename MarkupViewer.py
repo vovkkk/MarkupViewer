@@ -16,13 +16,16 @@ VERSION = 'unreleased'
 
 
 class App(QtGui.QMainWindow):
+    @property
+    def QSETTINGS(self):
+        return QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
+
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
         # Configure the window
         # TODO: add commandline parameter to force specific geometry
-        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
-        self.resize(qsettings.value('size', QtCore.QSize(800, 600)).toSize())
-        self.move(qsettings.value('pos', QtCore.QPoint(50, 50)).toPoint())
+        self.resize(self.QSETTINGS.value('size', QtCore.QSize(800, 600)).toSize())
+        self.move(self.QSETTINGS.value('pos', QtCore.QPoint(50, 50)).toPoint())
         self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(filename) if Settings.get('show_full_path', True) else os.path.basename(filename), sys_enc))
         self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
         try: # separate icon in the Windows dock
@@ -252,10 +255,15 @@ class App(QtGui.QMainWindow):
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
         self.toc_list.clear()
-        if not headers: return
+        if not headers:
+            self.dock_widget.setDisabled(True)
+            return
+        self.dock_widget.setDisabled(False)
         self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
         self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
         self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
+        if self.dock.isVisible():
+            self.filter_toc(self.filter.text())
 
     def _scroll(self, element=0):
         if element:
@@ -411,11 +419,10 @@ class App(QtGui.QMainWindow):
         self.field.textChanged.connect(self.find)
         setattr(self.field, 'keyPressEvent', self.searchShortcuts)
         self.close.pressed.connect(self.escape)
-        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
-        if qsettings.value('search_bar', False).toBool():
+        if self.QSETTINGS.value('search_bar', False).toBool():
             self.show_search_panel()
         for t, w in (('case_btn', self.case), ('wrap_btn', self.wrap), ('highlight_btn', self.high)):
-            w.setChecked(qsettings.value(t, False).toBool())
+            w.setChecked(self.QSETTINGS.value(t, False).toBool())
 
     def searchShortcuts(self, event):
         '''useful links:
@@ -440,11 +447,40 @@ class App(QtGui.QMainWindow):
     def toc_panel(self):
         self.dock = QtGui.QDockWidget("  TOC", self)
         self.dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-        self.toc_list = QtGui.QListWidget(self.dock)
-        self.dock.setWidget(self.toc_list)
-        self.dock.hide()
         self.dock.visibilityChanged.connect(lambda v: self.toc_panel_action.setChecked(v))
+        if not self.QSETTINGS.value('toc_bar', False).toBool():
+            self.dock.hide()
+        else:
+            self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock)
+
+        self.dock_widget = QtGui.QWidget()
+        self.dock.setWidget(self.dock_widget)
+
+        self.toc_list = QtGui.QListWidget(self.dock)
         self.setStyleSheet('QListWidget{border:0px}')
+        setattr(self.toc_list, 'sizeHint', self.toc_panel_default_width)
+
+        self.filter = QtGui.QLineEdit()
+        self.filter.setPlaceholderText('Filter headers')
+        self.filter.textChanged.connect(self.filter_toc)
+
+        dock_layout = QtGui.QVBoxLayout()
+        dock_layout.setContentsMargins(0,0,0,0)
+        dock_layout.addWidget(self.filter)
+        dock_layout.addWidget(self.toc_list)
+        self.dock_widget.setLayout(dock_layout)
+
+    def filter_toc(self, text):
+        # kinda fuzzy search: text → *t*e*x*t*
+        text = u'*%s*' % u'*'.join(unicode(t) for t in text)
+        matches = self.toc_list.findItems(text, QtCore.Qt.MatchContains | QtCore.Qt.MatchWildcard)
+        all_items = self.toc_list.findItems('*', QtCore.Qt.MatchWildcard | QtCore.Qt.MatchWrap)
+        for i in all_items:
+            i.setHidden(True if i not in matches else False)
+
+    def toc_panel_default_width(self):
+        # 30% of main window width
+        return QtCore.QSize(int(self.width()*3/10), 0)
 
     def print_doc(self):
         dialog = QtGui.QPrintPreviewDialog()
@@ -458,12 +494,11 @@ class App(QtGui.QMainWindow):
             self.closeEvent(QtGui.QCloseEvent)
 
     def closeEvent(self, QCloseEvent):
-        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
-        qsettings.setValue('size', self.size())
-        qsettings.setValue('pos', self.pos())
-        for t, w in (('search_bar', self.search_bar), ('case_btn', self.case), ('wrap_btn', self.wrap), ('highlight_btn', self.high)):
-            if 'btn' in t: qsettings.setValue(t, w.isChecked())
-            else:          qsettings.setValue(t, w.isVisible())
+        self.QSETTINGS.setValue('size', self.size())
+        self.QSETTINGS.setValue('pos', self.pos())
+        for t, w in (('search_bar', self.search_bar), ('toc_bar', self.dock), ('case_btn', self.case), ('wrap_btn', self.wrap), ('highlight_btn', self.high)):
+            if 'btn' in t: self.QSETTINGS.setValue(t, w.isChecked())
+            else:          self.QSETTINGS.setValue(t, w.isVisible())
         QtGui.qApp.quit()
 
 
@@ -647,6 +682,10 @@ class SetuptheReader:
 
 
 class CheckUpdate:
+    @property
+    def QSETTINGS(self):
+        return QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
+
     def __init__(self, parent):
         self.t = self.Check()
         self.t.start()
@@ -659,12 +698,11 @@ class CheckUpdate:
             self.response = json.loads(request)[0]
 
     def notify(self, response, parent):
-        qsettings = QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
-        last_update = qsettings.value('last_update', datetime.datetime(2014, 1, 1, 1, 1, 1)).toPyObject()
+        last_update = self.QSETTINGS.value('last_update', datetime.datetime(2014, 1, 1, 1, 1, 1)).toPyObject()
         published   = datetime.datetime.strptime(response.get('published_at', ''), '%Y-%m-%dT%H:%M:%SZ')
         now         = datetime.datetime.now()
         if now - last_update > datetime.timedelta(7) and published > last_update:
-            qsettings.setValue('last_update', now)
+            self.QSETTINGS.setValue('last_update', now)
             notify = self.Notification(parent)
             notify.show()
             link = (response['assets'][0]['browser_download_url'] if os.name == 'nt' else response['tarball_url'])
