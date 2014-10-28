@@ -22,7 +22,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
     * OrgMode<b>\*</b>
     * Textile
     * txt2tags<b>\*</b>
-* Linked table of content
+* Linked table of content as a menu or in sidebar (you can filter headers to find one)
 * Statistics — words, characters and lines count  
     It, also, tries to count amount of the unique words in a document. However, take the results with a grain of salt — the application has no clue about grammatical cases.
 * Drag and drop any file on an existing MV window to preview the file

@@ -46,6 +46,7 @@ class App(QtGui.QMainWindow):
         # TODO: ¿ non-default browser @settings ?
         self.web_view.linkClicked.connect(lambda url: webbrowser.open_new_tab(url.toString()))
         # drag&drop
+        self.setAcceptDrops(True)
         self.web_view.setAcceptDrops(True)
         setattr(self.web_view, 'dragEnterEvent', self.dragEnterEvent)
         setattr(self.web_view, 'dropEvent', self.dropEvent)
@@ -257,12 +258,16 @@ class App(QtGui.QMainWindow):
         self.toc_list.clear()
         if not headers:
             self.dock_widget.setDisabled(True)
+            self.filter.hide()
+            self.captain.show()
             return
         self.dock_widget.setDisabled(False)
         self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
         self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
         self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
         if self.dock.isVisible():
+            self.filter.show()
+            self.captain.hide()
             self.filter_toc(self.filter.text())
 
     def _scroll(self, element=0):
@@ -297,7 +302,7 @@ class App(QtGui.QMainWindow):
         self.field.selectAll()
 
     def show_toc_panel(self):
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock)
+        self.addDockWidget(self.QSETTINGS.value('toc_bar_area', QtCore.Qt.LeftDockWidgetArea).toInt()[0], self.dock)
         if self.dock.isVisible():
             self.dock.hide()
             self.toc_panel_action.setChecked(False)
@@ -448,13 +453,15 @@ class App(QtGui.QMainWindow):
         self.dock = QtGui.QDockWidget("  TOC", self)
         self.dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
         self.dock.visibilityChanged.connect(lambda v: self.toc_panel_action.setChecked(v))
+        self.dock.dockLocationChanged.connect(lambda a: self.toc_panel_save_state(a))
         if not self.QSETTINGS.value('toc_bar', False).toBool():
             self.dock.hide()
         else:
-            self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock)
+            self.show_toc_panel()
 
         self.dock_widget = QtGui.QWidget()
         self.dock.setWidget(self.dock_widget)
+        self.dock_widget.setDisabled(True)
 
         self.toc_list = QtGui.QListWidget(self.dock)
         self.setStyleSheet('QListWidget{border:0px}')
@@ -463,9 +470,13 @@ class App(QtGui.QMainWindow):
         self.filter = QtGui.QLineEdit()
         self.filter.setPlaceholderText('Filter headers')
         self.filter.textChanged.connect(self.filter_toc)
+        self.filter.hide()
+
+        self.captain = QtGui.QLabel('<br><br><br><center><big>No headers</big></center>')
 
         dock_layout = QtGui.QVBoxLayout()
         dock_layout.setContentsMargins(0,0,0,0)
+        dock_layout.addWidget(self.captain)
         dock_layout.addWidget(self.filter)
         dock_layout.addWidget(self.toc_list)
         self.dock_widget.setLayout(dock_layout)
@@ -481,6 +492,9 @@ class App(QtGui.QMainWindow):
     def toc_panel_default_width(self):
         # 30% of main window width
         return QtCore.QSize(int(self.width()*3/10), 0)
+
+    def toc_panel_save_state(self, area):
+        self.QSETTINGS.setValue('toc_bar_area', area)
 
     def print_doc(self):
         dialog = QtGui.QPrintPreviewDialog()
