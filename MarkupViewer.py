@@ -265,10 +265,9 @@ class App(QtGui.QMainWindow):
         self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
         self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
         self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
-        if self.dock.isVisible():
-            self.filter.show()
-            self.captain.hide()
-            self.filter_toc(self.filter.text())
+        self.filter.show()
+        self.captain.hide()
+        self.filter_toc(self.filter.text())
 
     def _scroll(self, element=0):
         if element:
