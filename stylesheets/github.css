@@ -68,6 +68,18 @@ pre code { margin: 0; padding: 0;  border: none; background: transparent; }
 pre {font-size: 0.9em; background-color: #f8f8f8; border: 1px solid #cccccc; overflow: auto; padding: 6px 10px; margin: 0; word-wrap: break-word; }
   pre code, pre tt {background-color: transparent; border: none; word-wrap: break-word;}
 
+kbd {
+  background-color: #E7E7E7;
+  background-image: linear-gradient(#FEFEFE, #E7E7E7);
+  background-repeat: repeat-x;
+  display: inline-block;
+  padding: 1px 3px;
+  font: 11px/10px Consolas,"Liberation Mono",Menlo,Courier,monospace;
+  color: #000;
+  border: 1px solid #CFCFCF;
+  border-radius: 2px;
+}
+
 @media only screen and (min-width: 480px) {
 body{font-size:12pt;}
 }

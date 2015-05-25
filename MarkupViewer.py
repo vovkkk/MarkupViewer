@@ -22,11 +22,12 @@ class App(QtGui.QMainWindow):
 
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
+        self.filename = filename or os.path.join(script_dir, 'README.md')
         # Configure the window
         # TODO: add commandline parameter to force specific geometry
         self.resize(self.QSETTINGS.value('size', QtCore.QSize(800, 600)).toSize())
         self.move(self.QSETTINGS.value('pos', QtCore.QPoint(50, 50)).toPoint())
-        self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(filename) if Settings.get('show_full_path', True) else os.path.basename(filename), sys_enc))
+        self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(self.filename) if Settings.get('show_full_path', True) else os.path.basename(self.filename), sys_enc))
         self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
         try: # separate icon in the Windows dock
             import ctypes
@@ -36,7 +37,6 @@ class App(QtGui.QMainWindow):
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
         # Start the File Watcher Thread
-        self.filename = filename or os.path.join(script_dir, 'README.md')
         self.thread1 = WatcherThread(self.filename)
         self.connect(self.thread1, QtCore.SIGNAL('update(QString,QString)'), self.update)
         self.thread1.start()
@@ -251,7 +251,7 @@ class App(QtGui.QMainWindow):
                 break
             else:
                 self.toc.setDisabled(False)
-            title = '  '*indent + h.toPlainText()
+            title = u'  '*indent + h.toPlainText()
             vars(self)['toc_nav%d'%n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png'%indent), title, self)
             vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
             self.toc.addAction(vars(self)['toc_nav%d'%n])
@@ -262,7 +262,12 @@ class App(QtGui.QMainWindow):
             self.captain.show()
             return
         self.dock_widget.setDisabled(False)
-        self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
+        for t in list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)):
+            # item = QtGui.QListWidgetItem(QtGui.QIcon('icons/left_margin.png'), t)
+            item = QtGui.QListWidgetItem(t)
+            item.setSizeHint(QtCore.QSize(0, 26))
+            self.toc_list.addItem(item)
+        # self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
         self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
         self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
         self.filter.show()
@@ -323,12 +328,13 @@ class App(QtGui.QMainWindow):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         ic = 'icons/feather.png'
+        na = 'icons/left_margin.png' # workaround for Linux to keep items aligned
         for d in (
-            {'icon': '', 'label': u'&Save as…',          'keys': 'Ctrl+s', 'func': self.save_html},
+            {'icon': na, 'label': u'&Save as…',          'keys': 'Ctrl+s', 'func': self.save_html},
             {'icon': ic, 'label': u'&Edit the original', 'keys': 'Ctrl+e', 'func': lambda : self.edit_file('')},
-            {'icon': '', 'label': u'&Find on the page…', 'keys': 'Ctrl+f', 'func': self.show_search_panel},
-            {'icon': '', 'label': u'&Print',             'keys': 'Ctrl+p', 'func': self.print_doc},
-            {'icon': '', 'label': u'Set&tings',          'keys': 'Ctrl+t', 'func': lambda: self.edit_file(Settings().edit_settings())},
+            {'icon': na, 'label': u'&Find on the page…', 'keys': 'Ctrl+f', 'func': self.show_search_panel},
+            {'icon': na, 'label': u'&Print',             'keys': 'Ctrl+p', 'func': self.print_doc},
+            {'icon': na, 'label': u'Set&tings',          'keys': 'Ctrl+t', 'func': lambda: self.edit_file(Settings().edit_settings())},
             {'icon': '', 'label': u'E&xit',              'keys': 'ESC',    'func': self.escape}
             ):
                 a = QtGui.QAction(QtGui.QIcon(d['icon']), d['label'], self)
@@ -465,6 +471,7 @@ class App(QtGui.QMainWindow):
         self.toc_list = QtGui.QListWidget(self.dock)
         self.setStyleSheet('QListWidget{border:0px}')
         setattr(self.toc_list, 'sizeHint', self.toc_panel_default_width)
+        # self.toc_list.setWordWrap(True)
 
         self.filter = QtGui.QLineEdit()
         self.filter.setPlaceholderText('Filter headers')
