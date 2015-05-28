@@ -393,7 +393,7 @@ class App(QtGui.QMainWindow):
         self.web_view.addAction(reload_action)
 
     def force_reload_view(self):
-        self.thread1.last_modified = 0
+        self.thread1.run()
 
     def search_panel(self):
         self.search_bar = QtGui.QToolBar()
@@ -525,29 +525,25 @@ class App(QtGui.QMainWindow):
 class WatcherThread(QtCore.QThread):
     def __init__(self, filename):
         QtCore.QThread.__init__(self)
+        self.w = QtCore.QFileSystemWatcher([filename])
+        self.w.fileChanged.connect(self.run)
         self.filename = filename
 
     def __del__(self):
         self.wait()
 
     def run(self):
-        self.last_modified = 0
-        while True:
-            warn = ''
-            current_modified = os.path.getmtime(self.filename)
-            if self.last_modified != current_modified:
-                self.last_modified = current_modified
-                reader, writer = SetuptheReader._for(self.filename)
-                if not writer:
-                    html, warn = u'', self.tell_em(reader)
-                elif writer == 'pandoc':
-                    html, warn = self.pandoc_rules(reader)
-                else:
-                    try:  html = self.aint_no_need_pandoc(reader, writer)
-                    except Exception as e:
-                        html, warn = '', u'<b>%s</b><br>%s' % (str(writer)[1:-1], e)
-                self.emit(QtCore.SIGNAL('update(QString,QString)'), html, warn)
-            time.sleep(0.5)
+        warn = ''
+        reader, writer = SetuptheReader._for(self.filename)
+        if not writer:
+            html, warn = u'', self.tell_em(reader)
+        elif writer == 'pandoc':
+            html, warn = self.pandoc_rules(reader)
+        else:
+            try:  html = self.aint_no_need_pandoc(reader, writer)
+            except Exception as e:
+                html, warn = '', u'<b>%s</b><br>%s' % (str(writer)[1:-1], e)
+        self.emit(QtCore.SIGNAL('update(QString,QString)'), html, warn)
 
     def tell_em(self, reader):
         warn = (u'<p>There is no module able to convert <b>%s</b>.</p>' % reader)
@@ -606,15 +602,6 @@ class Settings:
             return
         with io.open(self.settings_file, 'r', encoding='utf8') as f:
             self.settings = yaml.safe_load(f)
-
-    def watch_settings(self):
-        last_modified = 0
-        while True:
-            current_modified = os.path.getmtime(self.settings_file)
-            if last_modified != current_modified:
-                last_modified = current_modified
-                self.reload_settings()
-            time.sleep(1)
 
     def edit_settings(self):
         if not os.path.exists(self.user_source):
@@ -777,11 +764,7 @@ def main():
     if len(sys.argv) != 2: test = App()
     else:                  test = App(filename=sys.argv[1])
     test.show()
-    if yaml:
-        thread2 = threading.Thread(target=Settings().watch_settings)
-        thread2.setDaemon(True)
-        thread2.start()
-    else:
+    if not yaml:
         QtGui.QMessageBox.information(test,'PyYAML is not installed',
             'MarkupViewer will work using default settings.<br>'
             'In order to change settings, please install <a href="https://pypi.python.org/pypi/PyYAML/">PyYAML</a>.')
