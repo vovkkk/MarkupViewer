@@ -63,6 +63,7 @@ class App(QtGui.QMainWindow):
         fn = event.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
         self.filename = self.thread1.filename = fn
         self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(fn) if Settings.get('show_full_path', True) else os.path.basename(fn), sys_enc))
+        self.force_reload_view()
 
     def edit_file(self, fn):
         if not fn: fn = self.filename
