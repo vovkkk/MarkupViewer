@@ -29,7 +29,7 @@ class App(QtGui.QMainWindow):
         self.move(self.QSETTINGS.value('pos', QtCore.QPoint(50, 50)).toPoint())
         self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(self.filename) if Settings.get('show_full_path', True) else os.path.basename(self.filename), sys_enc))
         self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
-        try: # separate icon in the Windows dock
+        try:  # separate icon in the Windows dock
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
         except: pass
@@ -40,7 +40,7 @@ class App(QtGui.QMainWindow):
         self.thread1 = WatcherThread(self.filename)
         self.connect(self.thread1, QtCore.SIGNAL('update(QString,QString)'), self.update)
         self.thread1.start()
-        self.update('','')
+        self.update('', '')
         self.web_view.loadFinished.connect(self.after_update)
         # Open links in default browser
         # TODO: ¿ non-default browser @settings ?
@@ -91,7 +91,7 @@ class App(QtGui.QMainWindow):
         elif ext:
             reader, _ = SetuptheReader._for(self.filename)
             pandoc_path = Settings.get('pandoc_path', 'pandoc')
-            args = ('%s -s --from=%s --to=%s'%(pandoc_path, reader, ext[1:])).split() + [self.filename, '--output=%s' % new_file]
+            args = ('%s -s --from=%s --to=%s' % (pandoc_path, reader, ext[1:])).split() + [self.filename, '--output=%s' % new_file]
             try:    subprocess.Popen(args)
             except: QtGui.QMessageBox.critical(self, 'Cannot find pandoc',
                         'Please, install <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>.<br>'
@@ -294,10 +294,8 @@ class App(QtGui.QMainWindow):
 
     @staticmethod
     def set_stylesheet(self, stylesheet='default.css'):
-        # QT only works when the slashes are forward??
-        full_path = 'file://' + os.path.join(stylesheet_dir, stylesheet)
-        full_path = full_path.replace('\\', '/')
-        url = QtCore.QUrl(full_path)
+        full_path = os.path.join(stylesheet_dir, stylesheet)
+        url = QtCore.QUrl.fromLocalFile(full_path)
         self.web_view.settings().setUserStyleSheetUrl(url)
 
     def show_search_panel(self):
