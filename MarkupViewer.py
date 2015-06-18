@@ -39,6 +39,8 @@ class App(QtGui.QMainWindow):
         # Start the File Watcher Thread
         self.thread1 = WatcherThread(self.filename)
         self.connect(self.thread1, QtCore.SIGNAL('update(QString,QString)'), self.update)
+        self.w = QtCore.QFileSystemWatcher([self.filename])
+        self.w.fileChanged.connect(self.thread1.start)
         self.thread1.start()
         self.update('', '')
         self.web_view.loadFinished.connect(self.after_update)
@@ -111,12 +113,13 @@ class App(QtGui.QMainWindow):
         self.web_view.setHtml(text, baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
-        self.web_view.page().linkHovered.connect(lambda link:self.setToolTip(link))
-        # supposed to be 3 threads: main, convertion, settings-reload
+        self.web_view.page().linkHovered.connect(lambda link: self.setToolTip(link))
+        # supposed to be 2 threads when start script: main, convertion
+        # then only 1 on each update: main
         # IDs are supposed to be the same on each update
         # for threadId, _ in sys._current_frames().items():
-        #     print "ThreadID: %s" % threadId
-        # print '====================\tfinish update()'
+        #     print("ThreadID: %s" % threadId)
+        # print('====================\tfinish update()')
         if warn:
             QtGui.QMessageBox.warning(self, 'Converter says', warn)
 
@@ -524,12 +527,7 @@ class App(QtGui.QMainWindow):
 class WatcherThread(QtCore.QThread):
     def __init__(self, filename):
         QtCore.QThread.__init__(self)
-        self.w = QtCore.QFileSystemWatcher([filename])
-        self.w.fileChanged.connect(self.run)
         self.filename = filename
-
-    def __del__(self):
-        self.wait()
 
     def run(self):
         warn = ''
@@ -585,7 +583,7 @@ class Settings:
     def __init__(self):
         if os.name == 'nt':
             self.user_source = os.path.join(os.getenv('APPDATA'), 'MarkupViewer/settings.yaml')
-        else: # for Linux & OSX
+        else:  # for Linux & OSX
             self.user_source = os.path.join(os.getenv('HOME'), '.config/MarkupViewer/settings.yaml')
         self.app_source = os.path.join(script_dir, 'settings.yaml')
         self.settings_file = self.user_source if os.path.exists(self.user_source) else self.app_source
@@ -764,7 +762,7 @@ def main():
     else:                  test = App(filename=sys.argv[1])
     test.show()
     if not yaml:
-        QtGui.QMessageBox.information(test,'PyYAML is not installed',
+        QtGui.QMessageBox.information(test, 'PyYAML is not installed',
             'MarkupViewer will work using default settings.<br>'
             'In order to change settings, please install <a href="https://pypi.python.org/pypi/PyYAML/">PyYAML</a>.')
     app.exec_()
