@@ -643,7 +643,7 @@ class SetuptheReader:
             return dict {'ext1': 'reader1', ...}'''
         # why: make it simple for user to redefine readers for file extensions
         omg = lambda d: itertools.imap(lambda t: (t, d[0]), d[1].split())
-        return {e: r for e, r in itertools.chain(*itertools.imap(omg, readers.iteritems()))}
+        return dict((e, r) for e, r in itertools.chain(*itertools.imap(omg, readers.iteritems())))
 
     @classmethod
     def readers_names(self):
