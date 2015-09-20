@@ -49,6 +49,17 @@ To automatically open a file with this viewer in Windows, associate the filetype
 
 You can apply styles by dropping your stylesheets in the `stylesheets\` directory next to this script and selecting one from the Style menu.
 
+### Unicode support
+MarkupViewer does support Unicode [and only Unicode] as much as Python2 and PyQt4 allow:
+
+#### Text encoding
+Since some of 3rd party software, used for conversion, support _only_ UTF8 encoding (Pandoc, Markdown Python library, etc.) MarkupViewer assumes that file encoding is UTF8, although some software support other encodings (e.g. AsciiDoc, docutils)—MV _ignores_ it.  
+Of course, UTF8 is not the best option, it still does not fully support all languages and writing systems, but this issue is down to Unicode Consortium to resolve; sorry.
+
+#### Filename encoding
+MarkupViewer supports Unicode filenames [encoded with UTF8], but with [at least] one exception: when you launch MV on Windows [either in cmd or double-click via batch file] it recognises only those filenames that can be decoded using preferred system encoding, which is being set in [Windows regional settings](http://windows.microsoft.com/en-gb/windows/change-system-locale#1TC=windows-7).  
+**Workaround**: drag & drop file from Explorer onto MarkupViewer window, in that case Unicode filenames are fully supported, if they can be decoded with UTF8.
+
 ## Contributing
 Feel free to make improvements. Fork and send me a pull request.
 

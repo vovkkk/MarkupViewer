@@ -2,12 +2,16 @@
 # coding: utf8
 
 from __future__ import print_function
-import sys, time, os, webbrowser, importlib, itertools, locale, io, subprocess, threading, shutil, urllib2, json, datetime
+import sys, os, webbrowser, importlib, itertools, locale, io, subprocess, shutil, urllib2, json, datetime, math
 try:
     import yaml
 except ImportError:
     yaml = None
 from PyQt4 import QtCore, QtGui, QtWebKit
+try:  # separate icon in the Windows dock
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
+except: pass
 
 sys_enc        = locale.getpreferredencoding()
 script_dir     = os.path.dirname(os.path.realpath(__file__))
@@ -20,6 +24,9 @@ class App(QtGui.QMainWindow):
     def QSETTINGS(self):
         return QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
 
+    def set_title(self):
+        self.setWindowTitle(u'%s — MarkupViewer' % (os.path.abspath(self.filename) if Settings.get('show_full_path', True) else os.path.basename(self.filename)))
+
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
         self.filename = filename or os.path.join(script_dir, 'README.md')
@@ -27,12 +34,8 @@ class App(QtGui.QMainWindow):
         # TODO: add commandline parameter to force specific geometry
         self.resize(self.QSETTINGS.value('size', QtCore.QSize(800, 600)).toSize())
         self.move(self.QSETTINGS.value('pos', QtCore.QPoint(50, 50)).toPoint())
-        self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(self.filename) if Settings.get('show_full_path', True) else os.path.basename(self.filename), sys_enc))
+        self.set_title()
         self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
-        try:  # separate icon in the Windows dock
-            import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
-        except: pass
         # Add the WebView control
         self.web_view = QtWebKit.QWebView()
         self.setCentralWidget(self.web_view)
@@ -62,14 +65,14 @@ class App(QtGui.QMainWindow):
     def dragEnterEvent(self, event): event.accept()
 
     def dropEvent(self, event):
-        fn = event.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
-        self.filename = self.thread1.filename = fn
-        self.setWindowTitle(u'%s — MarkupViewer' % unicode(os.path.abspath(fn) if Settings.get('show_full_path', True) else os.path.basename(fn), sys_enc))
+        fn = event.mimeData().urls()[0].toLocalFile().toUtf8().data()
+        self.filename = self.thread1.filename = fn.decode('utf8')
+        self.set_title()
         self.force_reload_view()
 
     def edit_file(self, fn):
         if not fn: fn = self.filename
-        args = Settings.get('editor', 'sublime_text').split() + [fn]
+        args = Settings.get('editor', 'sublime_text').split() + [fn.encode(sys_enc)]
         try:    subprocess.Popen(args)
         except:
             try:    subprocess.Popen(['notepad', fn])
@@ -110,7 +113,7 @@ class App(QtGui.QMainWindow):
         self.prev_scroll = prev_doc.scrollPosition()
         self.prev_ls     = self.examine_doc_elements(prev_doc.documentElement())
         # actual update
-        self.web_view.setHtml(text, baseUrl=QtCore.QUrl('file:///'+unicode(os.path.join(os.getcwd(), self.filename).replace('\\', '/'), sys_enc)))
+        self.web_view.setHtml(text, baseUrl=QtCore.QUrl('file:///' + os.path.join(os.getcwd(), self.filename).replace('\\', '/')))
         # Delegate links to default browser
         self.web_view.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
         self.web_view.page().linkHovered.connect(lambda link: self.setToolTip(link))
@@ -184,7 +187,7 @@ class App(QtGui.QMainWindow):
         self.current_doc = self.web_view.page().currentFrame()
         current_ls       = self.examine_doc_elements(self.current_doc.documentElement())
         prev_len, curr_len, go = len(self.prev_ls), len(current_ls), 0
-        self._scroll(compare(self.prev_ls, current_ls, prev_len, curr_len, go))
+        self._scroll(element=compare(self.prev_ls, current_ls, prev_len, curr_len, go), update=True)
         self.generate_toc(current_ls)
         self.calc_stats()
 
@@ -278,22 +281,39 @@ class App(QtGui.QMainWindow):
         self.captain.hide()
         self.filter_toc(self.filter.text())
 
-    def _scroll(self, element=0):
+    def _scroll(self, element=0, update=0):
+        '''
+        element  html tag to top of which we need to scroll
+        update   if True, it was called upon doc update, otherwise it is on toc
+        '''
+        if update:
+            current_size = self.current_doc.contentsSize()
+            ypos = self.prev_scroll.y() - (self.prev_size.height() - current_size.height())
+            # print ('%s = %s - (%s - %s)' % (ypos, self.prev_scroll.y(), self.prev_size.height(), current_size.height()))
+            self.current_doc.scroll(0, ypos)
         if element:
             margin = (int(float(element.styleProperty('margin-top', 2)[:~1])) or
                       int(float(element.parent().styleProperty('margin-top', 2)[:~1])) or
                       int(float(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1])) or
                       0)
-            self.current_doc.setScrollPosition(QtCore.QPoint(0, element.geometry().top() - margin))
+            self.anim = QtCore.QPropertyAnimation(self.current_doc, 'scrollPosition')
+            start = self.prev_scroll if update else self.current_doc.scrollPosition()
+            # duration is logarithm of 700 to base x, where x is amount of pixels need to scroll (700 is arbitrary number which seems to give suitable results)
+            # i.e. more pixels means faster duration & fewer pixels—slower duration
+            #   10px: 284ms = 100 * (math.log(700)/math.log(10))
+            #  100px: 142ms = 100 * (math.log(700)/math.log(100))
+            # 1000px:  94ms = 100 * (math.log(700)/math.log(1000))
+            # so if change is close to prev pos, then we get nice smooth animation;
+            # if it is far, then we kinda quickly jump to it
+            self.anim.setDuration(100 * int(math.log(700)/math.log(abs(start.y() - element.geometry().top()))))
+            self.anim.setStartValue(QtCore.QPoint(start))
+            self.anim.setEndValue(QtCore.QPoint(0, element.geometry().top() - margin))
+            self.anim.start()
+            # highlight element via css property
             element.addClass('markupviewerautoscrollstart')
             QtCore.QTimer.singleShot(1100, lambda: element.addClass('markupviewerautoscrollend'))
             QtCore.QTimer.singleShot(1200, lambda: element.removeClass('markupviewerautoscrollstart'))
             QtCore.QTimer.singleShot(2300, lambda: element.removeClass('markupviewerautoscrollend'))
-        else:
-            current_size = self.current_doc.contentsSize()
-            ypos = self.prev_scroll.y() - (self.prev_size.height() - current_size.height())
-            # print ('%s = %s - (%s - %s)' % (ypos, self.prev_scroll.y(), self.prev_size.height(), current_size.height()))
-            self.current_doc.scroll(0, ypos)
 
     @staticmethod
     def set_stylesheet(self, stylesheet='default.css'):
@@ -555,10 +575,12 @@ class WatcherThread(QtCore.QThread):
         path    = Settings.get('pandoc_path', 'pandoc')
         pd_args = Settings.get('pandoc_args', '')
         reader  = Settings.get('pandoc_markdown', 'markdown') if reader == 'markdown' else reader
-        args = [path] + ('--from=%s %s' % (reader, pd_args)).split() + [self.filename]
-        p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        # print p.communicate()[1].decode('utf8')
-        html, warn = (m.decode('utf8') for m in p.communicate())
+        args = ('--from=%s %s' % (reader, pd_args)).split() + [self.filename]
+        caller = QtCore.QProcess()
+        caller.start(path, args)
+        caller.waitForFinished()
+        html = unicode(caller.readAllStandardOutput(), 'utf8')
+        warn = unicode(caller.readAllStandardError(), 'utf8')
         return (html, warn)
 
     def aint_no_need_pandoc(self, reader, writer):
@@ -759,7 +781,7 @@ class CheckUpdate:
 def main():
     app = QtGui.QApplication(sys.argv)
     if len(sys.argv) != 2: test = App()
-    else:                  test = App(filename=sys.argv[1])
+    else:                  test = App(filename=sys.argv[1].decode(sys_enc))
     test.show()
     if not yaml:
         QtGui.QMessageBox.information(test, 'PyYAML is not installed',
