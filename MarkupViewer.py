@@ -8,9 +8,31 @@ try:
 except ImportError:
     yaml = None
 from PyQt4 import QtCore, QtGui, QtWebKit
-try:  # separate icon in the Windows dock
+
+try:
+    # separate icon in the Windows dock
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
+
+    # enable unicode filenames
+    from ctypes import POINTER, byref, cdll, c_int, windll
+    from ctypes.wintypes import LPCWSTR, LPWSTR
+
+    GetCommandLineW = cdll.kernel32.GetCommandLineW
+    GetCommandLineW.argtypes = []
+    GetCommandLineW.restype = LPCWSTR
+
+    CommandLineToArgvW = windll.shell32.CommandLineToArgvW
+    CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
+    CommandLineToArgvW.restype = POINTER(LPWSTR)
+
+    cmd = GetCommandLineW()
+    argc = c_int(0)
+    argv = CommandLineToArgvW(cmd, byref(argc))
+    if argc.value > 0:
+        # Remove Python executable and commands if present
+        start = argc.value - len(sys.argv)
+        sys.argv = [argv[i] for i in xrange(start, argc.value)]
 except: pass
 
 sys_enc        = locale.getpreferredencoding()
@@ -72,20 +94,33 @@ class App(QtGui.QMainWindow):
 
     def edit_file(self, fn):
         if not fn: fn = self.filename
-        args = Settings.get('editor', 'sublime_text').split() + [fn.encode(sys_enc)]
-        try:    subprocess.Popen(args)
-        except:
-            try:    subprocess.Popen(['notepad', fn])
-            except: QtGui.QMessageBox.critical(self,
-                        'MarkupViewer cannot find a text editor',
-                        'Please, install <a href="https://pypi.python.org/pypi/PyYAML/">PyYAML</a> (if not yet).<br><br>'
-                        'And then change <code>editor</code> field in <code>settings.yaml</code> file.<br><br>'
-                        'It can be found in <pre>{0}</pre> or in <pre>{1}</pre> it is editable in any text editor.'
-                        .format(*(os.path.normpath(s) for s in (Settings().user_source, Settings().app_source)))
-                    )
+        editor  = Settings.get('editor', 'sublime_text').split()
+        command = editor[0]
+        ed_args = editor[1:] + [fn]
+        caller = QtCore.QProcess()
+        status = caller.execute(command, ed_args)
+        if status < 0:
+            caller = QtCore.QProcess()
+            success = caller.startDetached('notepad', [fn])
+            if not success:
+                msg = (u'Please, install <a href="https://pypi.python.org/pypi/PyYAML/">PyYAML</a> (if not yet).<br><br>'
+                       u'And then change <code>editor</code> field in <code>settings.yaml</code> file.<br><br>'
+                       u'It can be found in <pre>{0}</pre> or in <pre>{1}</pre> it is editable in any text editor.'
+                       .format(*(os.path.normpath(s) for s in (Settings().user_source, Settings().app_source))))
+                QtGui.QMessageBox.critical(self, 'MarkupViewer cannot find a text editor', msg)
 
     def save_html(self):
-        formats = '*.html;;*;;*.pdf;;*.md;;*.txt%s' % (';;*.odt;;*.docx;;*.rtf;;*.epub;;*.epub3;;*.fb2' if Settings.get('via_pandoc', False) else '')
+        formats = ('HyperText Markup Language (*.html);;'
+                   'All files (*);;'
+                   'Portable Document Format (*.pdf);;'
+                   'Markdown (*.md);;'
+                   'Plain text (*.txt);;%s' %
+                   ('OpenDocument Text (*.odt);;'
+                    'Office Open XML (*.docx);;'
+                    'Rich Text Format (*.rtf);;'
+                    'Electronic Publication v2 (*.epub);;'
+                    'Electronic Publication v3 (*.epub3);;'
+                    'FictionBook (*.fb2);;' if Settings.get('via_pandoc', False) else ''))
         new_file = unicode(QtGui.QFileDialog.getSaveFileName(self, 'Save file', os.path.dirname(self.filename), formats))
         ext = os.path.splitext(new_file)[1]
         if ext == ('.html' or ''):
@@ -95,12 +130,14 @@ class App(QtGui.QMainWindow):
             QtGui.QMessageBox.critical(self, 'Yo', '<a href="http://i0.kym-cdn.com/photos/images/original/000/284/529/e65.gif">AiNT NOBODY GOT TiME FOR DAT</a>')
         elif ext:
             reader, _ = SetuptheReader._for(self.filename)
-            pandoc_path = Settings.get('pandoc_path', 'pandoc')
-            args = ('%s -s --from=%s --to=%s' % (pandoc_path, reader, ext[1:])).split() + [self.filename, '--output=%s' % new_file]
-            try:    subprocess.Popen(args)
-            except: QtGui.QMessageBox.critical(self, 'Cannot find pandoc',
-                        'Please, install <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>.<br>'
-                        'If it is installed for sure, check if it is in PATH or change <code>pandoc_path</code> in settings.')
+            command = Settings.get('pandoc_path', 'pandoc')
+            pd_args = ['-s', '--from=%s' % reader, '--to=%s' % ext[1:], self.filename, '--output=%s' % new_file]
+            caller = QtCore.QProcess()
+            status = caller.execute(command, pd_args)
+            if status < 0:
+                msg = ('Please, install <a href="http://johnmacfarlane.net/pandoc/installing.html">Pandoc</a>.<br><br>'
+                       'If it is installed for sure, check if it is in PATH or change <code>pandoc_path</code> in settings.')
+                QtGui.QMessageBox.critical(self, 'Cannot find pandoc', msg)
         else:
             return
 
@@ -781,7 +818,7 @@ class CheckUpdate:
 def main():
     app = QtGui.QApplication(sys.argv)
     if len(sys.argv) != 2: test = App()
-    else:                  test = App(filename=sys.argv[1].decode(sys_enc))
+    else:                  test = App(filename=sys.argv[1])
     test.show()
     if not yaml:
         QtGui.QMessageBox.information(test, 'PyYAML is not installed',

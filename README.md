@@ -3,6 +3,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 
 ![](http://storage6.static.itmages.ru/i/14/0630/h_1404128604_3549738_b3b8c55834.png)
 
+
 ## Features
 * Cross Platform (tested only on Windows though)
 * Updates when the file is changed
@@ -28,6 +29,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
 * Drag and drop any file on an existing MV window to preview the file
 * Print
 
+
 ## Dependencies
 * [Python](https://www.python.org/downloads/) 2.7
 * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
@@ -39,6 +41,7 @@ MarkupViewer is a simple previewer for various markup formats. The view will be 
     * [docutils](https://pypi.python.org/pypi/docutils)
     * [Markdown](http://pypi.python.org/pypi/Markdown)
     * [textile](https://pypi.python.org/pypi/textile)
+
 
 ## Usage
 ```
@@ -53,12 +56,8 @@ You can apply styles by dropping your stylesheets in the `stylesheets\` director
 MarkupViewer does support Unicode [and only Unicode] as much as Python2 and PyQt4 allow:
 
 #### Text encoding
-Since some of 3rd party software, used for conversion, support _only_ UTF8 encoding (Pandoc, Markdown Python library, etc.) MarkupViewer assumes that file encoding is UTF8, although some software support other encodings (e.g. AsciiDoc, docutils)—MV _ignores_ it.  
-Of course, UTF8 is not the best option, it still does not fully support all languages and writing systems, but this issue is down to Unicode Consortium to resolve; sorry.
+Since some of 3rd party software, used for conversion, support _only_ UTF8 encoding (Pandoc, Markdown Python library, etc.) MarkupViewer assumes that file encoding is UTF8, although some software support other encodings (e.g. AsciiDoc, docutils)—MV _ignores_ it.
 
-#### Filename encoding
-MarkupViewer supports Unicode filenames [encoded with UTF8], but with [at least] one exception: when you launch MV on Windows [either in cmd or double-click via batch file] it recognises only those filenames that can be decoded using preferred system encoding, which is being set in [Windows regional settings](http://windows.microsoft.com/en-gb/windows/change-system-locale#1TC=windows-7).  
-**Workaround**: drag & drop file from Explorer onto MarkupViewer window, in that case Unicode filenames are fully supported, if they can be decoded with UTF8.
 
 ## Contributing
 Feel free to make improvements. Fork and send me a pull request.
