@@ -5,6 +5,7 @@ a.anchor {display: block; padding-left: 30px; margin-left: -30px; cursor: pointe
 ::selection{background:rgba(255,255,0,0.3);color:#000}
 a::selection{background:rgba(255,255,0,0.3);color:#0645ad}
 h1, h2, h3, h4, h5, h6 {margin: 20px 0 10px; padding: 0; font-weight: bold; -webkit-font-smoothing: antialiased; cursor: text; position: relative; }
+h1+h2 {margin-top: 10px}
 h1 tt, h1 code {font-size: inherit; }
 h2 tt, h2 code {font-size: inherit; }
 h3 tt, h3 code {font-size: inherit; }
@@ -61,7 +62,7 @@ span.float-left {display: block; margin-right: 13px; overflow: hidden; float: le
 span.float-right {display: block; margin-left: 13px; overflow: hidden; float: right; }
   span.float-right > span {display: block; overflow: hidden; margin: 13px auto 0;   text-align: right; }
 pre, code, tt, .monospaced {font-family: Consolas, monospace;}
-p>code{font-size: 0.9em; word-wrap: break-word}
+p>code, li>code{font-size: 0.9em; word-wrap: break-word}
 code, tt, .monospaced {margin: 0 2px; padding: 0 5px; white-space: pre-wrap; border: 1px solid #eaeaea; background-color: #f8f8f8; }
 pre code { margin: 0; padding: 0;  border: none; background: transparent; }
 .highlight pre {background-color: #f8f8f8; border: 1px solid #cccccc; overflow: auto; padding: 6px 10px;}

@@ -37,6 +37,8 @@ except: pass
 
 sys_enc        = locale.getpreferredencoding()
 script_dir     = os.path.dirname(os.path.realpath(__file__))
+if os.name != 'nt':
+    script_dir = script_dir.decode(sys_enc)
 stylesheet_dir = os.path.join(script_dir, 'stylesheets/')
 VERSION = 'unreleased'
 
@@ -47,11 +49,12 @@ class App(QtGui.QMainWindow):
         return QtCore.QSettings(QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'MarkupViewer', 'MarkupViewer')
 
     def set_title(self):
-        self.setWindowTitle(u'%s — MarkupViewer' % (os.path.abspath(self.filename) if Settings.get('show_full_path', True) else os.path.basename(self.filename)))
+        parent, name = os.path.split(os.path.abspath(self.filename))
+        self.setWindowTitle(u'%s — MarkupViewer' % (u'%s (%s)' % (name, parent) if Settings.get('show_full_path', True) else name))
 
     def __init__(self, parent=None, filename=''):
         QtGui.QMainWindow.__init__(self, parent)
-        self.filename = filename or os.path.join(script_dir, 'README.md')
+        self.filename = filename or os.path.join(script_dir, u'README.md')
         # Configure the window
         # TODO: add commandline parameter to force specific geometry
         self.resize(self.QSETTINGS.value('size', QtCore.QSize(800, 600)).toSize())
@@ -664,7 +667,10 @@ class Settings:
             userfld = os.path.dirname(self.user_source)
             if not os.path.isdir(userfld):
                 os.makedirs(os.path.dirname(self.user_source))
-            shutil.copy2(self.app_source, self.user_source)
+            with io.open(self.app_source, 'r', encoding='utf8') as a:
+                text = a.read()
+            with io.open(self.user_source, 'w', encoding='utf8') as u:
+                u.write(text)
             self.settings_file = self.user_source
         return self.settings_file
 
@@ -721,7 +727,7 @@ class SetuptheReader:
     def is_available(self, reader):
         via_pandoc = Settings.get('via_pandoc', False)
         if via_pandoc and (reader != 'creole') and (reader != 'asciidoc'):
-            if subprocess.call([Settings.get('pandoc_path', 'pandoc'), '-v'], shell=True):
+            if subprocess.call([Settings.get('pandoc_path', 'pandoc'), '-v'], shell=(os.name == 'nt')):
                 via_pandoc = False
             else:
                 return (reader, 'pandoc')
@@ -817,8 +823,10 @@ class CheckUpdate:
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    if len(sys.argv) != 2: test = App()
-    else:                  test = App(filename=sys.argv[1])
+    if len(sys.argv) != 2:
+        test = App()
+    else:
+        test = App(filename=sys.argv[1] if os.name == 'nt' else sys.argv[1].decode(sys_enc))
     test.show()
     if not yaml:
         QtGui.QMessageBox.information(test, 'PyYAML is not installed',

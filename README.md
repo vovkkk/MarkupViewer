@@ -52,6 +52,26 @@ To automatically open a file with this viewer in Windows, associate the filetype
 
 You can apply styles by dropping your stylesheets in the `stylesheets\` directory next to this script and selecting one from the Style menu.
 
+To automatically open a file with this viewer in Ubuntu, create `MarkupViewer.desktop` file with following content:
+
+```ini
+[Desktop Entry]
+Name=MarkupViewer
+Comment=A simple previewer for various markup formats
+Exec=/full/path/to/MarkupViewer/MarkupViewer.sh %f
+Terminal=false
+Type=Application
+```
+
+Replace `/full/path/to` with actual full path; move this file to `~/.local/share/applications` and open `mimeapps.list` in this directory (or create if `mimeapps.list` does not exist), add association, e.g. for Markdown:
+
+```ini
+[Default Applications]
+text/x-markdown=MarkupViewer.desktop
+```
+
+Make `desktop` and `sh` files executable in their properties in file explorer, or with chmod command in terminal.
+
 ### Unicode support
 MarkupViewer does support Unicode [and only Unicode] as much as Python2 and PyQt4 allow:
 
