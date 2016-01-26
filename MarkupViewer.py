@@ -2,12 +2,12 @@
 # coding: utf8
 
 from __future__ import print_function
-import sys, os, webbrowser, importlib, itertools, locale, io, subprocess, shutil, urllib2, json, datetime, math
+import sys, os, webbrowser, importlib, itertools, locale, io, subprocess, urllib2, json, datetime, math
 try:
     import yaml
 except ImportError:
     yaml = None
-from PyQt4 import QtCore, QtGui, QtWebKit
+from PyQt4 import QtCore, QtGui, QtWebKit, QtNetwork
 
 try:
     # separate icon in the Windows dock
@@ -62,7 +62,10 @@ class App(QtGui.QMainWindow):
         self.set_title()
         self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
         # Add the WebView control
+        self.cache = QtNetwork.QNetworkDiskCache()
+        self.cache.setCacheDirectory('cache')
         self.web_view = QtWebKit.QWebView()
+        self.web_view.page().networkAccessManager().setCache(self.cache)
         self.setCentralWidget(self.web_view)
         # Start the File Watcher Thread
         self.thread1 = WatcherThread(self.filename)
@@ -101,8 +104,8 @@ class App(QtGui.QMainWindow):
         command = editor[0]
         ed_args = editor[1:] + [fn]
         caller = QtCore.QProcess()
-        status = caller.execute(command, ed_args)
-        if status < 0:
+        success = caller.startDetached(command, ed_args)
+        if not success:
             caller = QtCore.QProcess()
             success = caller.startDetached('notepad', [fn])
             if not success:
@@ -381,9 +384,10 @@ class App(QtGui.QMainWindow):
         back = p.FindFlags(1) if btn is self.prev else p.FindFlags(0)
         case = p.FindFlags(2) if self.case.isChecked() else p.FindFlags(0)
         wrap = p.FindFlags(4) if self.wrap.isChecked() else p.FindFlags(0)
-        high = p.FindFlags(8) if self.high.isChecked() else p.FindFlags(0)
-        p.findText('', p.FindFlags(8)) # clear prev highlight
-        p.findText(text, back | wrap | case | high)
+        p.findText('', p.FindFlags(8))  # clear prev highlight
+        p.findText(text, back | wrap | case)
+        if self.high.isChecked():
+            p.findText(text, back | wrap | case | p.FindFlags(8))
 
     def menus(self):
         # TODO: hide menu?
@@ -628,6 +632,18 @@ class WatcherThread(QtCore.QThread):
             text = f.read()
         if reader == 'rst':
             html = writer(text, writer_name='html', settings_overrides={'stylesheet_path': ''})['body']
+        elif reader == 'markdown':
+            html = writer(text, extensions=['markdown.extensions.extra',
+                                            'markdown.extensions.admonition',
+                                            'markdown.extensions.codehilite',
+                                            'markdown.extensions.headerid',
+                                            'markdown.extensions.meta',
+                                            'markdown.extensions.nl2br',
+                                            'markdown.extensions.sane_lists',
+                                            'markdown.extensions.smarty',
+                                            'markdown.extensions.toc',
+                                            'markdown.extensions.wikilinks'
+                                            ])
         elif reader == 'asciidoc':
             import StringIO
             infile = StringIO.StringIO(text.encode('utf8'))
