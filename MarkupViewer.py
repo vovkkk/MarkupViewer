@@ -208,7 +208,7 @@ class App(QtGui.QMainWindow):
                 elif curr_len > prev_len and i + 1 > prev_len:
                     # some block was appended to doc
                     go = 1
-                elif curr_len < prev_len and  i + 1 == curr_len:
+                elif curr_len < prev_len and i + 1 == curr_len:
                     # some block was removed in the end of doc
                     go = 1
                 elif element.tagName() == prev_ls[i][0].tagName():
@@ -216,7 +216,7 @@ class App(QtGui.QMainWindow):
                         # block’s content was changed
                         go = 1
                         # print ('ya', element.geometry().top(), element.tagName(), unicode(element.toPlainText()).encode('utf8', 'replace'))
-                else: # block in the middle of doc was changed (<p> → <h1>)
+                else:  # block in the middle of doc was changed (<p> → <h1>)
                     go = 1
                     # print ('na', element.geometry().top(), unicode(element.toPlainText()).encode('utf8', 'replace'))
                     # print (element.tagName(), self.prev_ls[i][0].tagName())
@@ -290,21 +290,21 @@ class App(QtGui.QMainWindow):
         self.toc.setDisabled(True)
         headers = []
         for element in flatten(current_ls):
-            if element.tagName()[0] == 'H' and len(element.tagName()) == 2 and not 'HR' in element.tagName():
+            if element.tagName()[0] == 'H' and len(element.tagName()) == 2 and 'HR' not in element.tagName():
                 headers.append(element)
         self.toc.addAction(self.toc_panel_action)
         for n, h in enumerate(headers, start=1):
             try:
                 indent = int(h.tagName()[1:])
-            except ValueError: # cannot make it integer, means no headers
+            except ValueError:  # cannot make it integer, means no headers
                 print(h.tagName())
                 break
             else:
                 self.toc.setDisabled(False)
-            title = u'  '*indent + h.toPlainText()
-            vars(self)['toc_nav%d'%n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png'%indent), title, self)
-            vars(self)['toc_nav%d'%n].triggered[()].connect(lambda header=h: self._scroll(header))
-            self.toc.addAction(vars(self)['toc_nav%d'%n])
+            title = u'  ' * indent + h.toPlainText()
+            vars(self)['toc_nav%d' % n] = QtGui.QAction(QtGui.QIcon('icons/h%d.png' % indent), title, self)
+            vars(self)['toc_nav%d' % n].triggered[()].connect(lambda header=h: self._scroll(header))
+            self.toc.addAction(vars(self)['toc_nav%d' % n])
         self.toc_list.clear()
         if not headers:
             self.dock_widget.setDisabled(True)
@@ -312,14 +312,14 @@ class App(QtGui.QMainWindow):
             self.captain.show()
             return
         self.dock_widget.setDisabled(False)
-        for t in list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)):
+        for t in list(vars(self)['toc_nav%d' % i].text() for i in xrange(1, n + 1)):
             # item = QtGui.QListWidgetItem(QtGui.QIcon('icons/left_margin.png'), t)
             item = QtGui.QListWidgetItem(t)
             item.setSizeHint(QtCore.QSize(0, 26))
             self.toc_list.addItem(item)
         # self.toc_list.addItems(list(vars(self)['toc_nav%d'%i].text() for i in xrange(1, n+1)))
-        self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
-        self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow()+1)].activate(0))
+        self.toc_list.itemPressed.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow() + 1)].activate(0))
+        self.toc_list.itemActivated.connect(lambda n: vars(self)['toc_nav%d' % (n.listWidget().currentRow() + 1)].activate(0))
         self.filter.show()
         self.captain.hide()
         self.filter_toc(self.filter.text())
@@ -330,28 +330,44 @@ class App(QtGui.QMainWindow):
         update   if True, it was called upon doc update, otherwise it is on toc
         '''
         if update:
+            # restore approx. pos of vertical scroll, because setting a new html sets it 0, ie top of the page
             current_size = self.current_doc.contentsSize()
             ypos = self.prev_scroll.y() - (self.prev_size.height() - current_size.height())
             # print ('%s = %s - (%s - %s)' % (ypos, self.prev_scroll.y(), self.prev_size.height(), current_size.height()))
             self.current_doc.scroll(0, ypos)
+
         if element:
             margin = (int(float(element.styleProperty('margin-top', 2)[:~1])) or
                       int(float(element.parent().styleProperty('margin-top', 2)[:~1])) or
                       int(float(self.current_doc.findFirstElement('body').styleProperty('padding-top', 2)[:~1])) or
                       0)
-            self.anim = QtCore.QPropertyAnimation(self.current_doc, 'scrollPosition')
-            start = self.prev_scroll if update else self.current_doc.scrollPosition()
-            # duration is logarithm of 700 to base x, where x is amount of pixels need to scroll (700 is arbitrary number which seems to give suitable results)
-            # i.e. more pixels means faster duration & fewer pixels—slower duration
-            #   10px: 284ms = 100 * (math.log(700)/math.log(10))
-            #  100px: 142ms = 100 * (math.log(700)/math.log(100))
-            # 1000px:  94ms = 100 * (math.log(700)/math.log(1000))
-            # so if change is close to prev pos, then we get nice smooth animation;
-            # if it is far, then we kinda quickly jump to it
-            self.anim.setDuration(100 * int(math.log(700)/math.log(abs(start.y() - element.geometry().top()))))
-            self.anim.setStartValue(QtCore.QPoint(start))
-            self.anim.setEndValue(QtCore.QPoint(0, element.geometry().top() - margin))
-            self.anim.start()
+
+            ela = element.geometry().top()
+            elb = element.geometry().bottom()
+            viewport_height = self.web_view.page().viewportSize().height()
+            viewport_top    = self.web_view.page().currentFrame().scrollPosition().y()
+            viewport_bottom = viewport_top + viewport_height
+
+            # print(viewport_top > ela > viewport_bottom, viewport_top > elb > viewport_bottom,
+            #       viewport_top > ela > viewport_bottom or viewport_top > elb > viewport_bottom,
+            #       u'{viewport_top} > {ela} > {viewport_bottom} or {viewport_top} > {elb} > {viewport_bottom}'.format(viewport_top=viewport_top, ela=ela, viewport_bottom=viewport_bottom, elb=elb))
+
+            # scroll to top side of element on toc action (not update), or when element is outside of viewport, ie invisible or partly visible
+            if any((not update, ela < viewport_top, ela > viewport_bottom, elb > viewport_bottom)):
+                self.anim = QtCore.QPropertyAnimation(self.current_doc, 'scrollPosition')
+                start = self.prev_scroll if update else self.current_doc.scrollPosition()
+                # duration is logarithm of 700 to base x, where x is amount of pixels need to scroll (700 is arbitrary number which seems to give suitable results)
+                # i.e. more pixels means faster duration & fewer pixels—slower duration
+                #   10px: 284ms = 100 * (math.log(700)/math.log(10))
+                #  100px: 142ms = 100 * (math.log(700)/math.log(100))
+                # 1000px:  94ms = 100 * (math.log(700)/math.log(1000))
+                # so if change is close to prev pos, then we get nice smooth animation;
+                # if it is far, then we kinda quickly jump to it
+                self.anim.setDuration(100 * int(math.log(700)/math.log(abs(start.y() - element.geometry().top()))))
+                self.anim.setStartValue(QtCore.QPoint(start))
+                self.anim.setEndValue(QtCore.QPoint(0, element.geometry().top() - margin))
+                self.anim.start()
+
             # highlight element via css property
             element.addClass('markupviewerautoscrollstart')
             QtCore.QTimer.singleShot(1100, lambda: element.addClass('markupviewerautoscrollend'))
@@ -394,7 +410,7 @@ class App(QtGui.QMainWindow):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         ic = 'icons/feather.png'
-        na = 'icons/left_margin.png' # workaround for Linux to keep items aligned
+        na = 'icons/left_margin.png'  # workaround for Linux to keep items aligned
         for d in (
             {'icon': na, 'label': u'&Save as…',          'keys': 'Ctrl+s', 'func': self.save_html},
             {'icon': ic, 'label': u'&Edit the original', 'keys': 'Ctrl+e', 'func': lambda : self.edit_file('')},
