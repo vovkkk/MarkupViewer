@@ -15,7 +15,7 @@ try:
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
 
     # enable unicode filenames
-    from ctypes import POINTER, byref, cdll, c_int, windll 
+    from ctypes import POINTER, byref, cdll, c_int, windll
     from ctypes.wintypes import LPCWSTR, LPWSTR
 
     GetCommandLineW = cdll.kernel32.GetCommandLineW
@@ -34,6 +34,7 @@ try:
         start = argc.value - len(sys.argv)
         sys.argv = [argv[i] for i in xrange(start, argc.value)]
 except: pass
+
 sys_enc        = locale.getpreferredencoding()
 script_dir     = os.path.dirname(os.path.realpath(__file__))
 if os.name != 'nt':
@@ -51,7 +52,7 @@ class App(QtGui.QMainWindow):
         parent, name = os.path.split(os.path.abspath(self.filename))
         self.setWindowTitle(u'%s — MarkupViewer' % (u'%s (%s)' % (name, parent) if Settings.get('show_full_path', True) else name))
 
-    def __init__(self, args, parent=None)
+    def __init__(self, args, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
         self.filename = args.infile or os.path.join(script_dir, u'README.md')
         # Configure the window
@@ -848,17 +849,18 @@ class CheckUpdate:
             for b in (spacer, self.download, self.go_to_gh, self.cancel):
                 tb.addWidget(b)
 
-            self.addToolBar(0x8, tb) 
+            self.addToolBar(0x8, tb)
+
 
 def error(msg):
     print(msg)
     exit()
 
+
 class GeoAction(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         if nargs:
             error("Too many arguments for --geometry")
-
         super(GeoAction, self).__init__(option_strings, dest, **kwargs)
 
     def __call__(self, parser, namespace, value, option_string=None):
@@ -866,16 +868,15 @@ class GeoAction(argparse.Action):
             values = value.split("x")
             setattr(namespace, self.dest, (int(values[0]), int(values[1])))
         except:
-            error("Invalid option " + value + " for --geometry!")
+            error("\nInvalid option " + value + " for --geometry!\nTry\n\t-g 640x480\n")
 
 
 class FmAction(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
-
         super(FmAction, self).__init__(option_strings, dest, **kwargs)
 
     def __call__(self, parser, namespace, value, option_string=None):
-        setattr(namespace, self.dest, value if os.name == 'nt' else value.decode(sys_enc)
+        setattr(namespace, self.dest, value if os.name == 'nt' else value.decode(sys_enc))
 
 
 def main():
