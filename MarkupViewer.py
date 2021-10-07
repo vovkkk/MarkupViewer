@@ -2,7 +2,7 @@
 # coding: utf8
 
 from __future__ import print_function
-import sys, os, webbrowser, importlib, itertools, locale, io, subprocess, urllib2, json, datetime, math
+import sys, os, webbrowser, importlib, itertools, locale, io, subprocess, urllib2, json, datetime, math, argparse
 try:
     import yaml
 except ImportError:
@@ -15,7 +15,7 @@ try:
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MarkupViewer')
 
     # enable unicode filenames
-    from ctypes import POINTER, byref, cdll, c_int, windll
+    from ctypes import POINTER, byref, cdll, c_int, windll 
     from ctypes.wintypes import LPCWSTR, LPWSTR
 
     GetCommandLineW = cdll.kernel32.GetCommandLineW
@@ -34,7 +34,6 @@ try:
         start = argc.value - len(sys.argv)
         sys.argv = [argv[i] for i in xrange(start, argc.value)]
 except: pass
-
 sys_enc        = locale.getpreferredencoding()
 script_dir     = os.path.dirname(os.path.realpath(__file__))
 if os.name != 'nt':
@@ -52,12 +51,11 @@ class App(QtGui.QMainWindow):
         parent, name = os.path.split(os.path.abspath(self.filename))
         self.setWindowTitle(u'%s — MarkupViewer' % (u'%s (%s)' % (name, parent) if Settings.get('show_full_path', True) else name))
 
-    def __init__(self, parent=None, filename=''):
+    def __init__(self, args, parent=None)
         QtGui.QMainWindow.__init__(self, parent)
-        self.filename = filename or os.path.join(script_dir, u'README.md')
+        self.filename = args.infile or os.path.join(script_dir, u'README.md')
         # Configure the window
-        # TODO: add commandline parameter to force specific geometry
-        self.resize(self.QSETTINGS.value('size', QtCore.QSize(800, 600)).toSize())
+        self.resize(QtCore.QSize(args.geometry[0], args.geometry[1]) if args.geometry else self.QSETTINGS.value('size', QtCore.QSize(800, 600)).toSize())
         self.move(self.QSETTINGS.value('pos', QtCore.QPoint(50, 50)).toPoint())
         self.set_title()
         self.setWindowIcon(QtGui.QIcon('icons/markup.ico'))
@@ -850,15 +848,44 @@ class CheckUpdate:
             for b in (spacer, self.download, self.go_to_gh, self.cancel):
                 tb.addWidget(b)
 
-            self.addToolBar(0x8, tb)
+            self.addToolBar(0x8, tb) 
+
+def error(msg):
+    print(msg)
+    exit()
+
+class GeoAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs:
+            error("Too many arguments for --geometry")
+
+        super(GeoAction, self).__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        try:
+            values = value.split("x")
+            setattr(namespace, self.dest, (int(values[0]), int(values[1])))
+        except:
+            error("Invalid option " + value + " for --geometry!")
+
+
+class FmAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+
+        super(FmAction, self).__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        setattr(namespace, self.dest, value if os.name == 'nt' else value.decode(sys_enc)
 
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    if len(sys.argv) != 2:
-        test = App()
-    else:
-        test = App(filename=sys.argv[1] if os.name == 'nt' else sys.argv[1].decode(sys_enc))
+    parser = argparse.ArgumentParser(description="A simple previewer for various markup formats.")
+    parser.add_argument('-g', '--geometry', default=None, help="Geometry of the app window.", dest="geometry", action=GeoAction)
+    parser.add_argument('infile', nargs='?', default='', action=FmAction, help="Name of the markup file to be previewed.")
+    args = parser.parse_args()
+
+    test = App(args)
     test.show()
     if not yaml:
         QtGui.QMessageBox.information(test, 'PyYAML is not installed',
